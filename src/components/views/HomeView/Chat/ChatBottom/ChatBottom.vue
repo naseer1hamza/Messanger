@@ -120,10 +120,10 @@ const handleSend = async () => {
     await sendTextMessage({
       conversationId: activeConversation.value.id,
       content: text,
-      replyTo: activeConversation.replyMessage?.id,
+      replyTo: activeConversation.value.replyMessage?.id,
     });
     value.value = "";
-    const index = getConversationIndex(activeConversation.id);
+    const index = getConversationIndex(activeConversation.value.id);
     if (index !== undefined) {
       store.conversations[index].draftMessage = "";
       store.conversations[index].replyMessage = undefined;
@@ -132,12 +132,12 @@ const handleSend = async () => {
     const msg = getSendErrorMessage(e);
     try {
       appendLocalTextMessage({
-        conversationId: activeConversation.id,
+        conversationId: activeConversation.value.id,
         content: text,
-        replyTo: activeConversation.replyMessage?.id,
+        replyTo: activeConversation.value.replyMessage?.id,
       });
       value.value = "";
-      const index = getConversationIndex(activeConversation.id);
+      const index = getConversationIndex(activeConversation.value.id);
       if (index !== undefined) {
         store.conversations[index].draftMessage = "";
         store.conversations[index].replyMessage = undefined;

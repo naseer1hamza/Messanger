@@ -207,12 +207,18 @@ export function useConversationMessages(
             table: "messages",
             filter: `conversation_id=eq.${id}`,
           },
-          () => {
-            console.log("[useConversationMessages] Realtime event received, reloading messages");
+          (payload) => {
+            console.log("[useConversationMessages] Realtime event received!", payload);
+            console.log("[useConversationMessages] Event type:", payload.eventType);
             void reload(id);
           },
         )
-        .subscribe();
+        .subscribe((status, err) => {
+          console.log("[useConversationMessages] Subscription status:", status);
+          if (err) {
+            console.error("[useConversationMessages] Subscription error:", err);
+          }
+        });
     },
     { immediate: true },
   );
