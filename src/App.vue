@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 
 import useStore from "@src/store/store";
-import { fetchData } from "@src/store/defaults";
+import { useConversationsList } from "@src/composables/useConversationsList";
 
 import FadeTransition from "@src/components/ui/transitions/FadeTransition.vue";
 
@@ -32,6 +32,9 @@ import FadeTransition from "@src/components/ui/transitions/FadeTransition.vue";
 
 const store = useStore();
 
+// Load conversations from Supabase and subscribe to new ones
+const { loadConversations } = useConversationsList();
+
 // update localStorage with state changes
 store.$subscribe((_mutation, state) => {
   localStorage.setItem("chat", JSON.stringify(state));
@@ -41,19 +44,18 @@ store.$subscribe((_mutation, state) => {
 onMounted(async () => {
   store.status = "loading";
 
-  // fake server call
+  // Initialize auth state
+  await store.initAuth();
+
+  // After auth is ready, load conversations
+  console.log("[App] Auth initialized, loading conversations...");
+  await loadConversations();
+
+  // Mark loading complete
   setTimeout(() => {
     store.delayLoading = false;
-  });
-  const request = await fetchData();
-
-  store.$patch({
-    status: "success",
-    user: request.data.user,
-    conversations: request.data.conversations,
-    notifications: request.data.notifications,
-    archivedConversations: request.data.archivedConversations,
-  });
+    store.status = "success";
+  }, 500);
 });
 
 // the app height

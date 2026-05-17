@@ -4,7 +4,6 @@ import type { IConversation } from "@src/types";
 import { inject, ref } from "vue";
 
 import router from "@src/router";
-import { activeCall } from "@src/store/defaults";
 import useStore from "@src/store/store";
 import { getAvatar, getName } from "@src/utils";
 
@@ -59,13 +58,15 @@ const handleCloseConversation = () => {
 
 // (event) open the voice call modal and expand call
 const handleOpenVoiceCallModal = () => {
-  store.activeCall = activeCall;
-  store.callMinimized = false;
-
-  // wait for the transition to ongoing status to end
-  setTimeout(() => {
-    store.openVoiceCall = true;
-  }, 300);
+  // TODO: Implement voice calling feature
+  // For now, just show a placeholder
+  console.log("Voice call feature coming soon");
+  
+  // store.activeCall = activeCall;
+  // store.callMinimized = false;
+  // setTimeout(() => {
+  //   store.openVoiceCall = true;
+  // }, 300);
 };
 </script>
 

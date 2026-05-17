@@ -3,8 +3,14 @@ import type { Ref } from "vue";
 import type { IConversation } from "@src/types";
 
 import useStore from "@src/store/store";
-import { ref, inject, onMounted } from "vue";
+import { ref, inject, onMounted, watch } from "vue";
 import { getConversationIndex } from "@src/utils";
+import {
+  appendLocalTextMessage,
+  getSendErrorMessage,
+  isSupabaseConversationId,
+  sendTextMessage,
+} from "@src/composables/useConversationMessages";
 
 import {
   CheckIcon,
@@ -24,7 +30,7 @@ import Textarea from "@src/components/ui/inputs/Textarea.vue";
 
 const store = useStore();
 
-const activeConversation = <IConversation>inject("activeConversation");
+const activeConversation = inject<Ref<IConversation | undefined>>("activeConversation");
 
 // the content of the message.
 const value: Ref<string> = ref("");
@@ -63,17 +69,95 @@ const handleClickOutside = (event: Event) => {
   }
 };
 
-// (event) set the draft message equals the content of the text area
-const handleSetDraft = () => {
-  const index = getConversationIndex(activeConversation.id);
+const syncDraftToStore = (draft: string) => {
+  if (!activeConversation?.value) return;
+  const index = getConversationIndex(activeConversation.value.id);
   if (index !== undefined) {
-    store.conversations[index].draftMessage = value.value;
+    store.conversations[index].draftMessage = draft;
   }
 };
 
+const onComposerInput = (newValue: string) => {
+  value.value = newValue;
+  syncDraftToStore(newValue);
+};
+
 onMounted(() => {
-  value.value = activeConversation.draftMessage;
+  if (activeConversation?.value) {
+    value.value = activeConversation.value.draftMessage;
+  }
 });
+
+watch(
+  () => activeConversation?.value?.id,
+  () => {
+    if (activeConversation?.value) {
+      value.value = activeConversation.value.draftMessage;
+    }
+  },
+);
+
+const sendError = ref("");
+const sending = ref(false);
+
+const handleSend = async () => {
+  sendError.value = "";
+  const text = value.value.trim();
+  if (!text || sending.value || !activeConversation?.value) return;
+
+  console.log("[ChatBottom] Attempting to send message");
+  console.log("[ChatBottom] activeConversation.value.id:", activeConversation.value.id);
+  console.log("[ChatBottom] isSupabaseConversationId check:", isSupabaseConversationId(activeConversation.value.id));
+
+  if (!isSupabaseConversationId(activeConversation.value.id)) {
+    sendError.value =
+      "This chat is not linked to Supabase. Start a conversation from Compose (opens a real thread).";
+    return;
+  }
+
+  sending.value = true;
+  try {
+    await sendTextMessage({
+      conversationId: activeConversation.value.id,
+      content: text,
+      replyTo: activeConversation.replyMessage?.id,
+    });
+    value.value = "";
+    const index = getConversationIndex(activeConversation.id);
+    if (index !== undefined) {
+      store.conversations[index].draftMessage = "";
+      store.conversations[index].replyMessage = undefined;
+    }
+  } catch (e) {
+    const msg = getSendErrorMessage(e);
+    try {
+      appendLocalTextMessage({
+        conversationId: activeConversation.id,
+        content: text,
+        replyTo: activeConversation.replyMessage?.id,
+      });
+      value.value = "";
+      const index = getConversationIndex(activeConversation.id);
+      if (index !== undefined) {
+        store.conversations[index].draftMessage = "";
+        store.conversations[index].replyMessage = undefined;
+      }
+      sendError.value =
+        "Could not save to server; message shown only on this device. " + msg;
+    } catch {
+      sendError.value = msg;
+    }
+    console.error(e);
+  } finally {
+    sending.value = false;
+  }
+};
+
+const handleComposerKeydown = (event: KeyboardEvent) => {
+  if (event.key !== "Enter" || event.shiftKey) return;
+  event.preventDefault();
+  void handleSend();
+};
 </script>
 
 <template>
@@ -85,6 +169,14 @@ onMounted(() => {
     >
       <ReplyMessage />
     </div>
+
+    <p
+      v-if="sendError"
+      class="px-5 pt-2 text-sm text-red-600 dark:text-red-400"
+      role="alert"
+    >
+      {{ sendError }}
+    </p>
 
     <div
       class="h-auto min-h-21 p-5 flex items-end"
@@ -112,14 +204,14 @@ onMounted(() => {
         <div class="relative">
           <Textarea
             class="max-h-[5rem] pr-12.5 resize-none scrollbar-hidden"
-            @value-changed="(newValue: string) => (value = newValue)"
-            @input="handleSetDraft"
             :value="value"
             auto-resize
             cols="30"
             rows="1"
             placeholder="Write your message here"
             aria-label="Write your message here"
+            @update:model-value="onComposerInput"
+            @keydown="handleComposerKeydown"
           />
 
           <!--emojis-->
@@ -198,8 +290,10 @@ onMounted(() => {
         <IconButton
           v-if="!recording"
           class="ic-btn-contained-primary w-7 h-7 active:scale-110"
+          :class="{ 'opacity-50 pointer-events-none': sending }"
           title="send message"
           aria-label="send message"
+          @click="handleSend"
         >
           <PaperAirplaneIcon class="w-4.25 h-4.25" />
         </IconButton>

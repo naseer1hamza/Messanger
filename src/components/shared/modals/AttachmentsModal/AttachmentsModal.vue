@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { attachments } from "@src/store/defaults";
+import { ref } from "vue";
+import type { IAttachment } from "@src/types";
 
 import Attachment from "@src/components/shared/modals/AttachmentsModal/Attachment.vue";
 import Button from "@src/components/ui/inputs/Button.vue";
@@ -11,6 +12,10 @@ const props = defineProps<{
   open: boolean;
   closeModal: () => void;
 }>();
+
+// Mock attachments for now - in real app, these would come from file picker
+const attachments = ref<IAttachment[]>([]);
+
 </script>
 
 <template>
@@ -19,7 +24,13 @@ const props = defineProps<{
       <div class="w-100 bg-white dark:bg-gray-800 rounded py-6">
         <!--attachments list-->
         <ScrollBox class="max-h-35 overflow-y-scroll">
+          <div v-if="attachments.length === 0" class="px-5 py-8 text-center">
+            <p class="body-2 text-black/70 dark:text-white/70">
+              No attachments selected. Click "Add" to select files.
+            </p>
+          </div>
           <Attachment
+            v-else
             v-for="(attachment, index) in attachments"
             :attachment="attachment"
             :key="index"

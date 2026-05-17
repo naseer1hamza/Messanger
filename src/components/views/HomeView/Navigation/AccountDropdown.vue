@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import useStore from "@src/store/store";
+import { supabase } from "@src/lib/supabase";
 
 import {
   ArrowLeftOnRectangleIcon,
@@ -18,6 +21,26 @@ const props = defineProps<{
 }>();
 
 const store = useStore();
+const router = useRouter();
+
+// Load user avatar on mount
+onMounted(async () => {
+  if (store.authUser && !store.profileData.avatar_url) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", store.authUser.id)
+      .single();
+
+    if (data?.avatar_url) {
+      store.profileData.avatar_url = data.avatar_url;
+    }
+  }
+});
+
+const avatarUrl = computed(() => {
+  return store.profileData.avatar_url || store.user?.avatar || "";
+});
 
 // (event) close dropdown menu when clicking outside
 const handleCloseOnClickOutside = (event: Event) => {
@@ -28,6 +51,13 @@ const handleCloseOnClickOutside = (event: Event) => {
   ) {
     props.handleCloseDropdown();
   }
+};
+
+// Handle logout
+const handleLogout = async () => {
+  props.handleCloseDropdown();
+  await supabase.auth.signOut();
+  router.push("/access/sign-in/");
 };
 </script>
 
@@ -49,8 +79,8 @@ const handleCloseOnClickOutside = (event: Event) => {
     >
       <div
         id="user-avatar"
-        :style="{ backgroundImage: `url(${store.user?.avatar})` }"
-        class="w-7 h-7 rounded-full bg-cover bg-center"
+        :style="{ backgroundImage: `url(${avatarUrl})` }"
+        class="w-7 h-7 rounded-full bg-cover bg-center bg-gray-200 dark:bg-gray-700"
       ></div>
     </button>
 
@@ -94,16 +124,15 @@ const handleCloseOnClickOutside = (event: Event) => {
         Password Change
       </RouterLink>
 
-      <RouterLink
-        to="/access/sign-in/"
+      <button
         class="dropdown-link dropdown-link-danger"
         aria-label="logout"
         role="menuitem"
-        @click.prevent="props.handleCloseDropdown"
+        @click="handleLogout"
       >
         <ArrowLeftOnRectangleIcon class="h-5 w-5 mr-3" />
         Logout
-      </RouterLink>
+      </button>
     </Dropdown>
   </div>
 </template>

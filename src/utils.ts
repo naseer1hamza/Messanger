@@ -26,13 +26,16 @@ export const getFullName = (contact: IContact, hyphen?: boolean) => {
  * @param conversation
  * @returns A contact object representing the other user in the conversation.
  */
-export const getOddContact = (conversation: IConversation) => {
+export const getOddContact = (conversation: IConversation | undefined) => {
+  if (!conversation) return undefined;
+  
   const store = useStore();
 
   let oddContact;
 
   for (let contact of conversation.contacts) {
-    if (store.user && contact.id !== store.user.id) {
+    // Use authUser.id instead of user.id since we're using Supabase auth
+    if (store.authUser && contact.id !== store.authUser.id) {
       oddContact = contact;
     }
   }
@@ -45,7 +48,9 @@ export const getOddContact = (conversation: IConversation) => {
  * @param conversation
  * @returns A string representing the url to the avatar image
  */
-export const getAvatar = (conversation: IConversation) => {
+export const getAvatar = (conversation: IConversation | undefined) => {
+  if (!conversation) return "";
+  
   if (["group", "broadcast"].includes(conversation.type)) {
     return conversation?.avatar;
   } else {
@@ -59,7 +64,9 @@ export const getAvatar = (conversation: IConversation) => {
  * @param conversation
  * @returns String
  */
-export const getName = (conversation: IConversation , hyphen?: boolean) => {
+export const getName = (conversation: IConversation | undefined, hyphen?: boolean) => {
+  if (!conversation) return "";
+  
   if (["group", "broadcast"].includes(conversation.type)) {
     if (hyphen) {
       return (conversation.name as string).split(" ").join("-");
@@ -117,9 +124,11 @@ export const hasAttachments = (message: IMessage) => {
 /**
  * extract the id of the active conversaiton from the url
  */
-export const getActiveConversationId = () => {
+export const getActiveConversationId = (): string | undefined => {
   const route = useRoute();
-  return route.params.id ? Number(route.params.id) : undefined;
+  const raw = route.params.id;
+  if (!raw) return undefined;
+  return Array.isArray(raw) ? raw[0] : raw;
 };
 
 /**
@@ -128,7 +137,7 @@ export const getActiveConversationId = () => {
  * @returns A number indicating the index of the conversation.
  */
 export const getConversationIndex = (
-  conversationId: number
+  conversationId: string
 ): number | undefined => {
   let conversationIndex;
   const store = useStore();
@@ -195,7 +204,7 @@ export const getCallName = (
 
 export const getMessageById = (
   conversation: IConversation,
-  messageId?: number
+  messageId?: string
 ) => {
   if (messageId) {
     return conversation.messages.find((message) => message.id === messageId);

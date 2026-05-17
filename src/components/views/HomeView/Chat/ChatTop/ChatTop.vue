@@ -73,6 +73,7 @@ const handleCloseVoiceCallModal = (endCall: boolean) => {
 
     <!--Pinned Message-->
     <div
+      v-if="activeConversation"
       class="relative transition-[padding] duration-200"
       :class="{
         'pb-15':

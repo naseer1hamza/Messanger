@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Conversations Loading</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>Supabase Conversations Test</h1>
+  <button onclick="testLoad()">Test Load Conversations</button>
+  <pre id="output"></pre>
+
+  <script>
+    // Replace these with your actual Supabase credentials
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    async function testLoad() {
+      const output = document.getElementById('output');
+      output.textContent = 'Loading...\n';
+      
+      try {
+        // Check auth
+        const { data: { session } } = await supabase.auth.getSession();
+        output.textContent += `Auth: ${session?.user?.id || 'NOT LOGGED IN'}\n\n`;
+        
+        if (!session?.user?.id) {
+          output.textContent += 'ERROR: Not logged in. Please log in first.\n';
+          return;
+        }
+        
+        const uid = session.user.id;
+        
+        // Check conversation_participants
+        output.textContent += '1. Checking conversation_participants...\n';
+        const { data: myParticipations, error: partError } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id')
+          .eq('user_id', uid);
+        
+        output.textContent += `Found ${myParticipations?.length || 0} participations\n`;
+        if (partError) output.textContent += `Error: ${JSON.stringify(partError)}\n`;
+        output.textContent += JSON.stringify(myParticipations, null, 2) + '\n\n';
+        
+        if (!myParticipations?.length) {
+          output.textContent += 'No conversations found for this user.\n';
+          return;
+        }
+        
+        const conversationIds = myParticipations.map(p => p.conversation_id);
+        
+        // Check conversations
+        output.textContent += '2. Checking conversations...\n';
+        const { data: conversations, error: convError } = await supabase
+          .from('conversations')
+          .select('id, type, name, avatar_url, created_at')
+          .in('id', conversationIds);
+        
+        output.textContent += `Found ${conversations?.length || 0} conversations\n`;
+        if (convError) output.textContent += `Error: ${JSON.stringify(convError)}\n`;
+        output.textContent += JSON.stringify(conversations, null, 2) + '\n\n';
+        
+        // Check messages
+        output.textContent += '3. Checking messages...\n';
+        for (const conv of conversations || []) {
+          const { data: messages, error: msgError } = await supabase
+            .from('messages')
+            .select('id, content, sender_id, created_at')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          output.textContent += `Conversation ${conv.id}: ${messages?.length || 0} messages\n`;
+          if (msgError) output.textContent += `Error: ${JSON.stringify(msgError)}\n`;
+          if (messages?.length) output.textContent += JSON.stringify(messages[0], null, 2) + '\n';
+        }
+        
+        // Check ALL participants
+        output.textContent += '\n4. Checking all participants for each conversation...\n';
+        for (const conv of conversations || []) {
+          const { data: participants, error: pError } = await supabase
+            .from('conversation_participants')
+            .select(`
+              user_id,
+              profiles!conversation_participants_user_id_fkey (
+                id,
+                username,
+                display_name,
+                avatar_url
+              )
+            `)
+            .eq('conversation_id', conv.id);
+          
+          output.textContent += `Conversation ${conv.id}: ${participants?.length || 0} participants\n`;
+          if (pError) output.textContent += `Error: ${JSON.stringify(pError)}\n`;
+          output.textContent += JSON.stringify(participants, null, 2) + '\n';
+        }
+        
+      } catch (e) {
+        output.textContent += `\nException: ${e.message}\n${e.stack}\n`;
+      }
+    }
+  </script>
+</body>
+</html>

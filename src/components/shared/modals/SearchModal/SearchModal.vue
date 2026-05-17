@@ -11,7 +11,7 @@ import ScrollBox from "@src/components/ui/utils/ScrollBox.vue";
 const props = defineProps<{
   open: boolean;
   closeModal: () => void;
-  conversation: IConversation;
+  conversation?: IConversation;
 }>();
 </script>
 
@@ -46,7 +46,7 @@ const props = defineProps<{
         <!--message-->
         <ScrollBox class="max-h-57.5 overflow-y-scroll">
           <MessageItem
-            v-if="props.conversation.messages.length > 0"
+            v-if="props.conversation?.messages?.length > 0"
             v-for="(message, index) in props.conversation.messages"
             :message="message"
             :key="index"

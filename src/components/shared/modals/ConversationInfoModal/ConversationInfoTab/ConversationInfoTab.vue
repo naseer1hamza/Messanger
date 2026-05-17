@@ -22,7 +22,7 @@ import Button from "@src/components/ui/inputs/Button.vue";
 import IconButton from "@src/components/ui/inputs/IconButton.vue";
 
 const props = defineProps<{
-  conversation: IConversation;
+  conversation?: IConversation;
   contact?: IContact;
   closeModal: () => void;
 }>();
@@ -47,11 +47,11 @@ const imageUrl = computed(() => {
         id="modal-title"
         tabindex="0"
       >
-        <span v-if="conversation.type === 'couple' || props.contact"
+        <span v-if="conversation?.type === 'couple' || props.contact"
           >Contact</span
         >
-        <span v-else-if="conversation.type === 'group'">Group</span>
-        <span v-else-if="conversation.type === 'broadcast'">Broadcast</span>
+        <span v-else-if="conversation?.type === 'group'">Group</span>
+        <span v-else-if="conversation?.type === 'broadcast'">Broadcast</span>
         Info
       </p>
 
@@ -117,16 +117,16 @@ const imageUrl = computed(() => {
               <!--last seen-->
               <!--or number of group members-->
               {{
-                conversation.type === "couple" || props.contact
+                conversation?.type === "couple" || props.contact
                   ? "Last seen Dec 16, 2019"
-                  : `${conversation.contacts.length} Contacts`
+                  : `${conversation?.contacts?.length || 0} Contacts`
               }}
             </p>
           </div>
 
           <IconButton
             title="edit group"
-            v-if="['group', 'broadcast'].includes(conversation.type)"
+            v-if="conversation && ['group', 'broadcast'].includes(conversation.type)"
             class="ic-btn-ghost-primary w-7 h-7"
             @click="
               $emit('active-page-change', {
@@ -145,7 +145,7 @@ const imageUrl = computed(() => {
     <div class="w-full py-5 border-t border-gray-100 dark:border-gray-700">
       <!--(contact) email-->
       <div
-        v-if="conversation.type === 'couple' || props.contact"
+        v-if="conversation?.type === 'couple' || props.contact"
         class="flex px-5 pb-5 items-center"
       >
         <IconAndText
@@ -157,7 +157,7 @@ const imageUrl = computed(() => {
       <!--(group) members-->
       <div
         v-if="
-          ['group', 'broadcast'].includes(conversation.type) && !props.contact
+          conversation && ['group', 'broadcast'].includes(conversation.type) && !props.contact
         "
         class="px-5 flex items-center pb-5"
       >
@@ -201,7 +201,7 @@ const imageUrl = computed(() => {
     <div class="w-full border-t border-gray-100 dark:border-gray-700">
       <!--(contact) block contact-->
       <div
-        v-if="conversation.type === 'couple' || props.contact"
+        v-if="conversation?.type === 'couple' || props.contact"
         class="px-5 pt-5 group"
       >
         <IconAndText :icon="NoSymbolIcon" title="block contact" link />
@@ -209,7 +209,7 @@ const imageUrl = computed(() => {
 
       <!--(contact) delete contact-->
       <div
-        v-if="conversation.type === 'couple' || props.contact"
+        v-if="conversation?.type === 'couple' || props.contact"
         class="px-5 pt-5 group"
       >
         <IconAndText :icon="TrashIcon" title="delete contact" link />
@@ -218,7 +218,7 @@ const imageUrl = computed(() => {
       <!--(group) exit group-->
       <div
         v-if="
-          ['group', 'broadcast'].includes(conversation.type) && !props.contact
+          conversation && ['group', 'broadcast'].includes(conversation.type) && !props.contact
         "
         class="px-5 pt-5 flex items-center group"
       >

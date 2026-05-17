@@ -10,20 +10,20 @@ import Message from "@src/components/views/HomeView/Chat/ChatMiddle/Message/Mess
 import TimelineDivider from "@src/components/views/HomeView/Chat/ChatMiddle/TimelineDivider.vue";
 
 const props = defineProps<{
-  handleSelectMessage: (messageId: number) => void;
-  handleDeselectMessage: (messageId: number) => void;
-  selectedMessages: number[];
+  handleSelectMessage: (messageId: string) => void;
+  handleDeselectMessage: (messageId: string) => void;
+  selectedMessages: string[];
 }>();
 
 const store = useStore();
 
 const container: Ref<HTMLElement | null> = ref(null);
 
-const activeConversation = <IConversation>inject("activeConversation");
+const activeConversation = inject<IConversation | undefined>("activeConversation");
 
 // checks whether the previous message was sent by the same user.
 const isFollowUp = (index: number, previousIndex: number): boolean => {
-  if (previousIndex < 0) {
+  if (!activeConversation?.messages || previousIndex < 0) {
     return false;
   } else {
     let previousSender = activeConversation.messages[previousIndex].sender.id;
@@ -34,7 +34,7 @@ const isFollowUp = (index: number, previousIndex: number): boolean => {
 
 // checks whether the message is sent by the authenticated user.
 const isSelf = (message: IMessage): boolean => {
-  return Boolean(store.user && message.sender.id === store.user.id);
+  return Boolean(store.authUser && message.sender.id === store.authUser.id);
 };
 
 // checks wether the new message has been sent in a new day or not.
@@ -60,7 +60,7 @@ onMounted(() => {
     class="grow px-5 py-5 flex flex-col overflow-y-scroll scrollbar-hidden"
   >
     <div
-      v-if="store.status !== 'loading'"
+      v-if="store.status !== 'loading' && activeConversation?.messages"
       v-for="(message, index) in activeConversation.messages"
       :key="index"
     >

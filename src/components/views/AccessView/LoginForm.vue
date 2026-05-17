@@ -1,12 +1,68 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 
 import Button from "@src/components/ui/inputs/Button.vue";
 import LabeledTextInput from "@src/components/ui/inputs/LabeledTextInput.vue";
 import PasswordInput from "@src/components/ui/inputs/PasswordInput.vue";
 import { RouterLink } from "vue-router";
+import { supabase } from "@src/lib/supabase";
+import useStore from "@src/store/store";
 
+const router = useRouter();
+const store = useStore();
+
+const email = ref("");
 const password = ref("");
+const error = ref("");
+const isLoading = ref(false);
+
+const canSubmit = computed(() => {
+  return email.value && password.value && !isLoading.value;
+});
+
+const handleSignIn = async () => {
+  error.value = "";
+
+  if (!email.value || !password.value) {
+    error.value = "Please fill in all fields";
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value,
+    });
+
+    if (signInError) throw signInError;
+
+    if (data.session) {
+      router.push("/chat/");
+    }
+  } catch (err: any) {
+    error.value = err.message || "Failed to sign in. Please check your credentials.";
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleGoogleSignIn = async () => {
+  try {
+    const { error: signInError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/chat/`,
+      },
+    });
+
+    if (signInError) throw signInError;
+  } catch (err: any) {
+    error.value = err.message || "Failed to sign in with Google";
+  }
+};
 </script>
 
 <template>
@@ -25,37 +81,42 @@ const password = ref("");
           Welcome back
         </p>
         <p class="body-3 text-black/75 dark:text-white/70 font-light">
-          Create an account a start messaging now!
+          Sign in to start messaging now!
         </p>
       </div>
 
       <!--form-->
       <div class="mb-6">
         <LabeledTextInput
+          :value="email"
+          @valueChanged="(value) => (email = value)"
+          type="email"
           label="Email"
           placeholder="Enter your email"
           class="mb-5"
         />
         <PasswordInput
-          @value-changed="
-            (value) => {
-              password = value;
-            }
-          "
+          @value-changed="(value) => (password = value)"
           :value="password"
           label="Password"
           placeholder="Enter your password"
         />
       </div>
 
+      <!--error message-->
+      <div v-if="error" class="mb-4">
+        <p class="body-3 text-red-500">{{ error }}</p>
+      </div>
+
       <!--local controls-->
       <div class="mb-6">
         <Button
           class="contained-primary contained-text w-full mb-4"
-          link
-          to="/chat/no-chat/"
-          >Sign in</Button
+          :disabled="!canSubmit"
+          @click="handleSignIn"
         >
+          {{ isLoading ? "Signing in..." : "Sign in" }}
+        </Button>
       </div>
 
       <!--divider-->
@@ -73,7 +134,10 @@ const password = ref("");
 
       <!--oauth controls-->
       <div>
-        <Button class="outlined-primary outlined-text w-full mb-5">
+        <Button
+          class="outlined-primary outlined-text w-full mb-5"
+          @click="handleGoogleSignIn"
+        >
           <img
             src="@src/assets/vectors/google-logo.svg"
             class="mr-3"

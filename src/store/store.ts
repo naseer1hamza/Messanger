@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
 import type { Ref } from "vue";
 import { computed, ref } from "vue";
+import type { User } from "@supabase/supabase-js";
 
-import defaults from "@src/store/defaults";
 import type {
   IConversation,
   IContactGroup,
@@ -12,6 +12,18 @@ import type {
   ISettings,
   IEmoji,
 } from "@src/types";
+import { supabase } from "@src/lib/supabase";
+
+const defaultSettings: ISettings = {
+  lastSeen: false,
+  readReceipt: false,
+  joiningGroups: false,
+  privateMessages: false,
+  darkMode: false,
+  borderedTheme: false,
+  allowNotifications: false,
+  keepNotifications: false,
+};
 
 const useStore = defineStore("chat", () => {
   // local storage
@@ -19,20 +31,30 @@ const useStore = defineStore("chat", () => {
 
   // app status refs
   const status = ref("idle");
+  
+  // auth state
+  const authUser: Ref<User | null> = ref(null);
+  const isAuthenticated = computed(() => authUser.value !== null);
+  
+  // profile state
+  const profileData = ref<{
+    username?: string;
+    display_name?: string;
+    bio?: string;
+    avatar_url?: string;
+  }>({});
 
   // app data refs
   // data refs
-  const user: Ref<IUser | undefined> = ref(defaults.user);
-  const conversations: Ref<IConversation[]> = ref(defaults.conversations || []);
-  const notifications: Ref<INotification[]> = ref(defaults.notifications || []);
-  const archivedConversations: Ref<IConversation[]> = ref(
-    defaults.archive || []
-  );
-  const calls: Ref<ICall[]> = ref(defaults.calls || []);
+  const user: Ref<IUser | undefined> = ref(undefined);
+  const conversations: Ref<IConversation[]> = ref([]);
+  const notifications: Ref<INotification[]> = ref([]);
+  const archivedConversations: Ref<IConversation[]> = ref([]);
+  const calls: Ref<ICall[]> = ref([]);
   const settings: Ref<ISettings> = ref(
-    storage.settings || defaults.defaultSettings
+    storage.settings || defaultSettings
   );
-  const activeCall: Ref<ICall | undefined> = ref(defaults.activeCall);
+  const activeCall: Ref<ICall | undefined> = ref(undefined);
   const recentEmoji: Ref<IEmoji[]> = ref(storage.recentEmoji || []);
   const emojiSkinTone: Ref<string> = ref(storage.emojiSkinTone || "neutral");
 
@@ -84,10 +106,28 @@ const useStore = defineStore("chat", () => {
 
   const getStatus = computed(() => status);
 
+  // Initialize auth state
+  const initAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    authUser.value = session?.user ?? null;
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      authUser.value = session?.user ?? null;
+    });
+  };
+
   return {
     // status refs
     status,
     getStatus,
+
+    // auth refs
+    authUser,
+    isAuthenticated,
+    initAuth,
+
+    // profile refs
+    profileData,
 
     // data refs
     user,

@@ -2,8 +2,10 @@
 import type { Ref } from "vue";
 
 import useStore from "@src/store/store";
-import { computed, provide, ref } from "vue";
+import { computed, provide, ref, watchEffect } from "vue";
+import { useRoute } from "vue-router";
 
+import { useConversationMessages } from "@src/composables/useConversationMessages";
 import { getActiveConversationId } from "@src/utils";
 
 import NoChatSelected from "@src/components/states/empty-states/NoChatSelected.vue";
@@ -13,24 +15,47 @@ import ChatMiddle from "@src/components/views/HomeView/Chat/ChatMiddle/ChatMiddl
 import ChatTop from "@src/components/views/HomeView/Chat/ChatTop/ChatTop.vue";
 
 const store = useStore();
+const route = useRoute();
+
+const activeRouteConversationId = computed(() => {
+  const raw = route.params.id;
+  if (!raw) return undefined;
+  return Array.isArray(raw) ? raw[0] : raw;
+});
+
+useConversationMessages(activeRouteConversationId);
 
 // search the selected conversation using activeConversationId.
-const activeConversation = computed(() => {
+const activeConversationComputed = computed(() => {
+  // Get conversation ID from route params
+  const raw = route.params.id;
+  const conversationId = raw ? (Array.isArray(raw) ? raw[0] : raw) : undefined;
+  
+  if (!conversationId) return undefined;
+  
   let activeConversation = store.conversations.find(
-    (conversation) => conversation.id === getActiveConversationId(),
+    (conversation) => conversation.id === conversationId,
   );
 
   if (activeConversation) {
     return activeConversation;
   } else {
     return store.archivedConversations.find(
-      (conversation) => conversation.id === getActiveConversationId(),
+      (conversation) => conversation.id === conversationId,
     );
   }
 });
 
-// provide the active conversation to all children.
-provide("activeConversation", activeConversation.value);
+// Create a ref that tracks the computed value for provide/inject
+const activeConversation = ref(activeConversationComputed.value);
+watchEffect(() => {
+  console.log("[Chat] activeConversationComputed changed:", activeConversationComputed.value?.id);
+  activeConversation.value = activeConversationComputed.value;
+  console.log("[Chat] activeConversation.value updated:", activeConversation.value?.id);
+});
+
+// provide the active conversation ref to all children
+provide("activeConversation", activeConversation);
 
 // determines whether select mode is enabled.
 const selectMode = ref(false);
@@ -39,10 +64,10 @@ const selectMode = ref(false);
 const selectAll = ref(false);
 
 // holds the selected conversations.
-const selectedMessages: Ref<number[]> = ref([]);
+const selectedMessages: Ref<string[]> = ref([]);
 
 // (event) add message to select messages.
-const handleSelectMessage = (messageId: number) => {
+const handleSelectMessage = (messageId: string) => {
   selectedMessages.value.push(messageId);
 
   if (
@@ -58,7 +83,7 @@ const handleSelectMessage = (messageId: number) => {
 };
 
 // (event) remove message from select messages.
-const handleDeselectMessage = (messageId: number) => {
+const handleDeselectMessage = (messageId: string) => {
   selectAll.value = false;
   selectedMessages.value = selectedMessages.value.filter(
     (item) => item !== messageId,
@@ -98,7 +123,7 @@ const handleCloseSelect = () => {
   <Spinner v-if="store.status === 'loading' || store.delayLoading" />
 
   <div
-    v-else-if="getActiveConversationId() && activeConversation"
+    v-else-if="route.params.id && activeConversation"
     class="h-full flex flex-col scrollbar-hidden"
   >
     <ChatTop

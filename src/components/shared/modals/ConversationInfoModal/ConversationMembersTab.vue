@@ -127,7 +127,7 @@ const handleClickOutside = (event: Event) => {
         >
           <template
             v-slot:tag
-            v-if="(props.conversation.admins as number[]).includes(contact.id)"
+            v-if="props.conversation.admins?.includes(contact.id)"
           >
             <div class="ml-3">
               <p class="body-4 text-indigo-400">admin</p>
@@ -138,7 +138,7 @@ const handleClickOutside = (event: Event) => {
             v-slot:menu
             v-if="
               store.user &&
-              (props.conversation.admins as number[]).includes(store.user.id) &&
+              props.conversation.admins?.includes(store.user.id) &&
               contact.id !== store.user.id
             "
           >

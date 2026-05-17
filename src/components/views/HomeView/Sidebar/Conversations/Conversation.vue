@@ -61,9 +61,11 @@ const handleSelectConversation = () => {
 };
 
 // last message in conversation to display
-const lastMessage = computed(
-  () => props.conversation.messages[props.conversation.messages.length - 1],
-);
+const lastMessage = computed(() => {
+  const msgs = props.conversation.messages;
+  if (!msgs?.length) return undefined;
+  return msgs[msgs.length - 1];
+});
 
 // (event) remove the unread indicator when opening the conversation
 const handleRemoveUnread = () => {
@@ -138,7 +140,9 @@ const isActive = computed(
             <!--recording name-->
             <p
               v-else-if="
-                lastMessage.type === 'recording' && lastMessage.content
+                lastMessage &&
+                lastMessage.type === 'recording' &&
+                lastMessage.content
               "
               class="body-2 text-black/70 dark:text-white/70 flex justify-start items-center"
             >
@@ -154,7 +158,7 @@ const isActive = computed(
 
             <!--attachments title-->
             <p
-              v-else-if="hasAttachments(lastMessage)"
+              v-else-if="lastMessage && hasAttachments(lastMessage)"
               class="body-2 text-black/70 dark:text-white/70 flex justify-start items-center"
               :class="{ 'text-indigo-400': props.conversation.unread }"
             >
@@ -165,13 +169,20 @@ const isActive = computed(
 
             <!--last message content -->
             <p
-              v-else
+              v-else-if="lastMessage"
               class="body-2 text-black/70 dark:text-white/70 flex justify-start items-center"
               :class="{ 'text-indigo-400': props.conversation.unread }"
             >
               <span :class="{ 'text-indigo-400': props.conversation.unread }">
                 {{ shorten(lastMessage) }}
               </span>
+            </p>
+
+            <p
+              v-else
+              class="body-2 text-black/40 dark:text-white/40 flex justify-start items-center"
+            >
+              No messages yet
             </p>
           </div>
 

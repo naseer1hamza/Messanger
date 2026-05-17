@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Ref } from "vue";
 
-import { computed, ref } from "vue";
+import { computed, provide, ref } from "vue";
 
 import ContactsTab from "@src/components/shared/modals/ComposeModal/ContactsTab.vue";
 import GroupTab from "@src/components/shared/modals/ComposeModal/GroupTab/GroupTab.vue";
@@ -15,6 +15,8 @@ const props = defineProps<{
   open: boolean;
   closeModal: () => void;
 }>();
+
+provide("closeComposeModal", () => props.closeModal());
 
 // the p element containing the modal title
 const modalTitle: Ref<HTMLElement | null> = ref(null);

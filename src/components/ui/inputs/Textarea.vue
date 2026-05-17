@@ -41,7 +41,5 @@ const handleInput = (event: any) => {
     :value="props.value"
     :placeholder="props.placeholder"
     ref="textarea"
-  >
-  {{ props.value }}
-  </textarea>
+  ></textarea>
 </template>

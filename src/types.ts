@@ -1,5 +1,5 @@
 export interface IUser {
-  id: number;
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -10,12 +10,14 @@ export interface IUser {
 }
 
 export interface IContact {
-  id: number;
+  id: string;
   firstName: string;
   lastName: string;
   avatar: string;
   email: string;
   lastSeen: Date;
+  /** From `profiles.username` when loaded from Supabase */
+  username?: string;
 }
 
 export interface IPreviewData {
@@ -27,7 +29,7 @@ export interface IPreviewData {
 }
 
 export interface IAttachment {
-  id: number;
+  id: string;
   type: string;
   name: string;
   size: string;
@@ -37,7 +39,7 @@ export interface IAttachment {
 }
 
 export interface IRecording {
-  id: number;
+  id: string;
   size: string;
   src: string;
   duration: string;
@@ -45,23 +47,25 @@ export interface IRecording {
 }
 
 export interface IMessage {
-  id: number;
+  id: string;
   type?: string;
   content?: string | IRecording;
   date: string;
+  /** Full timestamp for sorting; undefined for legacy/local messages */
+  timestamp?: Date;
   sender: IContact;
-  replyTo?: number;
+  replyTo?: string;
   previewData?: IPreviewData;
   attachments?: IAttachment[];
   state: string;
 }
 
 export interface IConversation {
-  id: number;
+  id: string;
   type: string;
   name?: string;
   avatar?: string;
-  admins?: number[];
+  admins?: string[];
   contacts: IContact[];
   messages: IMessage[];
   pinnedMessage?: IMessage;
@@ -100,7 +104,7 @@ export interface ICall {
   date: string;
   length: string;
   members: IContact[];
-  adminIds: number[];
+  adminIds: string[];
 }
 
 export interface IEmoji {

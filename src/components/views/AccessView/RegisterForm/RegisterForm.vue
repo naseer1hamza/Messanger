@@ -14,6 +14,15 @@ const activeSectionName = ref("personal-section");
 // determines what direction the slide animation should use.
 const animation = ref("slide-left");
 
+// form data shared between sections
+const formData = ref({
+  email: "",
+  username: "",
+  displayName: "",
+  password: "",
+  confirmPassword: "",
+});
+
 // get the active section component from the section name
 const ActiveSection = computed((): any => {
   if (activeSectionName.value === "personal-section") {
@@ -57,6 +66,7 @@ const changeActiveSection = (event: {
         <component
           @active-section-change="changeActiveSection"
           :is="ActiveSection"
+          v-model:formData="formData"
         />
       </SlideTransition>
 
