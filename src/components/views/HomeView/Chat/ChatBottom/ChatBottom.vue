@@ -31,6 +31,7 @@ import Textarea from "@src/components/ui/inputs/Textarea.vue";
 const store = useStore();
 
 const activeConversation = inject<Ref<IConversation | undefined>>("activeConversation");
+const broadcastTyping = inject<() => void>("broadcastTyping");
 
 // the content of the message.
 const value: Ref<string> = ref("");
@@ -80,6 +81,7 @@ const syncDraftToStore = (draft: string) => {
 const onComposerInput = (newValue: string) => {
   value.value = newValue;
   syncDraftToStore(newValue);
+  broadcastTyping?.();
 };
 
 onMounted(() => {
@@ -104,10 +106,6 @@ const handleSend = async () => {
   sendError.value = "";
   const text = value.value.trim();
   if (!text || sending.value || !activeConversation?.value) return;
-
-  console.log("[ChatBottom] Attempting to send message");
-  console.log("[ChatBottom] activeConversation.value.id:", activeConversation.value.id);
-  console.log("[ChatBottom] isSupabaseConversationId check:", isSupabaseConversationId(activeConversation.value.id));
 
   if (!isSupabaseConversationId(activeConversation.value.id)) {
     sendError.value =
@@ -147,7 +145,6 @@ const handleSend = async () => {
     } catch {
       sendError.value = msg;
     }
-    console.error(e);
   } finally {
     sending.value = false;
   }

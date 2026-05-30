@@ -70,7 +70,6 @@ export function usePendingFriendRequests() {
         sender: profileMap.get(r.sender_id),
       }));
     } catch (e: unknown) {
-      console.error(e);
       listError.value =
         e instanceof Error ? e.message : "Could not load requests";
       pendingRequests.value = [];

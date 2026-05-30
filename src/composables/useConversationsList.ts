@@ -85,16 +85,9 @@ async function fetchConversationsFromSupabase(): Promise<IConversation[]> {
   const store = useStore();
   const uid = store.authUser?.id;
   
-  console.log("[conversations] fetchConversationsFromSupabase called");
-  console.log("[conversations] store.authUser:", store.authUser);
-  console.log("[conversations] uid:", uid);
-  
   if (!uid) {
-    console.log("[conversations] No authenticated user, skipping fetch");
     return [];
   }
-
-  console.log(`[conversations] Fetching conversations for user ${uid}`);
 
   try {
     // Get conversations where user is a participant
@@ -102,11 +95,6 @@ async function fetchConversationsFromSupabase(): Promise<IConversation[]> {
       .from("conversation_participants")
       .select("conversation_id")
       .eq("user_id", uid);
-
-    console.log(`[conversations] Found ${myParticipations?.length || 0} participations`, {
-      error: partError,
-      data: myParticipations,
-    });
 
     if (partError || !myParticipations?.length) {
       return [];
@@ -121,11 +109,8 @@ async function fetchConversationsFromSupabase(): Promise<IConversation[]> {
       .in("id", conversationIds);
 
     if (convError || !conversations) {
-      console.error("[conversations] fetch failed", convError);
       return [];
     }
-
-    console.log(`[conversations] Fetched ${conversations.length} conversation details`);
 
     // Fetch participants for each conversation
     const result: IConversation[] = [];
@@ -180,9 +165,6 @@ async function fetchConversationsFromSupabase(): Promise<IConversation[]> {
       if (lastMessageData && (lastMessageData as any).profiles) {
         const msgRow = lastMessageData as any;
         messages.push(mapMessageRow(msgRow, msgRow.profiles));
-        console.log(`[conversations] Loaded last message for conversation ${conv.id}:`, msgRow.content);
-      } else {
-        console.log(`[conversations] No messages for conversation ${conv.id}`, { error: msgError });
       }
 
       result.push({
@@ -198,8 +180,7 @@ async function fetchConversationsFromSupabase(): Promise<IConversation[]> {
     }
 
     return result;
-  } catch (e) {
-    console.error("[conversations] fetch error", e);
+  } catch {
     return [];
   }
 }
@@ -213,27 +194,18 @@ export function useConversationsList() {
   let channel: RealtimeChannel | null = null;
 
   const loadConversations = async () => {
-    console.log("[conversations] Loading conversations from Supabase...");
     const conversations = await fetchConversationsFromSupabase();
-    console.log(`[conversations] Loaded ${conversations.length} conversations:`, conversations);
-    
+
     // Merge with existing to preserve local-only threads
     const existingIds = new Set(store.conversations.map((c) => c.id));
     const newConvs = conversations.filter((c) => !existingIds.has(c.id));
-    
-    console.log(`[conversations] Adding ${newConvs.length} new conversations to store`);
     store.conversations.push(...newConvs);
-    console.log(`[conversations] Store now has ${store.conversations.length} total conversations`);
   };
 
   const setupRealtimeSubscription = () => {
     const uid = store.authUser?.id;
-    if (!uid) {
-      console.log("[conversations] Cannot setup realtime - no authenticated user");
-      return;
-    }
+    if (!uid) return;
 
-    console.log("[conversations] Setting up realtime subscriptions...");
     channel = supabase
       .channel("conversations_list")
       .on(
@@ -245,8 +217,6 @@ export function useConversationsList() {
           filter: `user_id=eq.${uid}`,
         },
         () => {
-          // New conversation participant row where I'm the user
-          console.log("[conversations] New participant detected, reloading...");
           void loadConversations();
         },
       )
@@ -258,16 +228,10 @@ export function useConversationsList() {
           table: "messages",
         },
         (payload) => {
-          // New message inserted - check if we have this conversation loaded
           const conversationId = (payload.new as any)?.conversation_id;
           if (!conversationId) return;
-          
-          // Check if conversation exists in store
           const exists = store.conversations.some((c) => c.id === conversationId);
-          if (!exists) {
-            console.log("[conversations] New message for unknown conversation, reloading...");
-            void loadConversations();
-          }
+          if (!exists) void loadConversations();
         },
       )
       .subscribe();

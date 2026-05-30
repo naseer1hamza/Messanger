@@ -47,8 +47,6 @@ onMounted(async () => {
   // Initialize auth state
   await store.initAuth();
 
-  // After auth is ready, load conversations
-  console.log("[App] Auth initialized, loading conversations...");
   await loadConversations();
 
   // Mark loading complete

@@ -58,15 +58,7 @@ const handleCloseConversation = () => {
 
 // (event) open the voice call modal and expand call
 const handleOpenVoiceCallModal = () => {
-  // TODO: Implement voice calling feature
-  // For now, just show a placeholder
-  console.log("Voice call feature coming soon");
-  
-  // store.activeCall = activeCall;
-  // store.callMinimized = false;
-  // setTimeout(() => {
-  //   store.openVoiceCall = true;
-  // }, 300);
+  // TODO: implement voice calling
 };
 </script>
 

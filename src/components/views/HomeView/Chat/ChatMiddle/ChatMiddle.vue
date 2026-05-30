@@ -2,7 +2,7 @@
 import type { IConversation, IMessage } from "@src/types";
 import type { Ref } from "vue";
 
-import { inject, onMounted, ref } from "vue";
+import { computed, inject, onMounted, ref, watch } from "vue";
 
 import useStore from "@src/store/store";
 
@@ -20,6 +20,15 @@ const store = useStore();
 const container: Ref<HTMLElement | null> = ref(null);
 
 const activeConversation = inject<IConversation | undefined>("activeConversation");
+const typingUsers = inject<Ref<Map<string, string>>>("typingUsers", ref(new Map()));
+
+const typingLabel = computed(() => {
+  const names = Array.from(typingUsers.value.values());
+  if (names.length === 0) return "";
+  if (names.length === 1) return `${names[0]} is typing`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} are typing`;
+  return "Several people are typing";
+});
 
 // checks whether the previous message was sent by the same user.
 const isFollowUp = (index: number, previousIndex: number): boolean => {
@@ -46,12 +55,14 @@ const renderDivider = (index: number, previousIndex: number): boolean => {
   }
 };
 
-// scroll messages to bottom.
-onMounted(() => {
-  (container.value as HTMLElement).scrollTop = (
-    container.value as HTMLElement
-  ).scrollHeight;
-});
+const scrollToBottom = () => {
+  const el = container.value as HTMLElement | null;
+  if (el) el.scrollTop = el.scrollHeight;
+};
+
+onMounted(scrollToBottom);
+
+watch(typingUsers, scrollToBottom);
 </script>
 
 <template>
@@ -76,5 +87,26 @@ onMounted(() => {
         :handle-deselect-message="handleDeselectMessage"
       />
     </div>
+    <!--typing indicator-->
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0 translate-y-2"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition-all duration-150 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-2"
+    >
+      <div v-if="typingUsers.size > 0" class="flex items-end gap-2 mt-1 mb-1">
+        <!--bubble-->
+        <div
+          class="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl rounded-bl-sm bg-white dark:bg-gray-700 shadow-sm max-w-[7rem]"
+        >
+          <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce [animation-delay:0ms]"></span>
+          <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce [animation-delay:150ms]"></span>
+          <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce [animation-delay:300ms]"></span>
+        </div>
+        <p class="text-xs text-black/40 dark:text-white/40 mb-1">{{ typingLabel }}</p>
+      </div>
+    </Transition>
   </div>
 </template>

@@ -59,7 +59,6 @@ const handleContactSelected = async (contact: IContact) => {
   } catch (e) {
     openError.value =
       e instanceof Error ? e.message : "Could not open conversation.";
-    console.error(e);
   } finally {
     opening.value = false;
   }

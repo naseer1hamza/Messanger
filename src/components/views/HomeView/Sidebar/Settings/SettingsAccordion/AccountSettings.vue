@@ -57,8 +57,6 @@ onMounted(async () => {
 
     // If profile doesn't exist, create it
     if (fetchError && fetchError.code === "PGRST116") {
-      console.log("No profile found, creating one...");
-      
       const username = store.authUser.email?.split("@")[0] || `user_${store.authUser.id.substring(0, 8)}`;
       const displayName = store.authUser.user_metadata?.display_name || "User";
       
@@ -72,10 +70,7 @@ onMounted(async () => {
         .select()
         .single();
 
-      if (createError) {
-        console.error("Failed to create profile:", createError);
-        throw createError;
-      }
+      if (createError) throw createError;
 
       if (newProfile) {
         accountValues.value = {
@@ -95,10 +90,8 @@ onMounted(async () => {
         };
       }
     } else if (fetchError) {
-      console.error("Profile fetch error:", fetchError);
       throw fetchError;
     } else if (data) {
-      console.log("Loaded profile data:", data);
       accountValues.value = {
         username: data.username,
         displayName: data.display_name,
@@ -116,7 +109,6 @@ onMounted(async () => {
       };
     }
   } catch (err: any) {
-    console.error("Failed to load profile:", err);
     error.value = "Failed to load profile data. " + err.message;
   } finally {
     loadingProfile.value = false;

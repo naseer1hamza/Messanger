@@ -118,10 +118,7 @@ async function fetchMessagesForConversation(
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
 
-  if (error) {
-    console.error("[messages] fetch failed", error);
-    return [];
-  }
+  if (error) return [];
 
   const list = (rows || []) as MessageRow[];
   if (list.length === 0) return [];
@@ -132,10 +129,7 @@ async function fetchMessagesForConversation(
     .select("id, username, display_name, avatar_url")
     .in("id", senderIds);
 
-  if (profileError) {
-    console.error("[messages] profiles fetch failed", profileError);
-    return [];
-  }
+  if (profileError) return [];
 
   const profileMap = new Map(
     ((profiles || []) as ProfileRow[]).map((p) => [p.id, p]),
@@ -177,26 +171,18 @@ export function useConversationMessages(
   };
 
   const reload = async (id: string) => {
-    console.log("[useConversationMessages] reload() called for:", id);
     const messages = await fetchMessagesForConversation(id);
-    console.log("[useConversationMessages] Fetched", messages.length, "messages");
     applyMessages(id, messages);
   };
 
   watch(
     conversationId,
     async (id) => {
-      console.log("[useConversationMessages] conversationId changed to:", id);
       clearChannel();
-      if (!id || !isSupabaseConversationId(id)) {
-        console.log("[useConversationMessages] Skipping - not a valid Supabase conversation ID");
-        return;
-      }
+      if (!id || !isSupabaseConversationId(id)) return;
 
-      console.log("[useConversationMessages] Loading messages for conversation:", id);
       await reload(id);
 
-      console.log("[useConversationMessages] Setting up realtime subscription for:", id);
       channel = supabase
         .channel(`messages:${id}`)
         .on(
@@ -207,18 +193,11 @@ export function useConversationMessages(
             table: "messages",
             filter: `conversation_id=eq.${id}`,
           },
-          (payload) => {
-            console.log("[useConversationMessages] Realtime event received!", payload);
-            console.log("[useConversationMessages] Event type:", payload.eventType);
+          () => {
             void reload(id);
           },
         )
-        .subscribe((status, err) => {
-          console.log("[useConversationMessages] Subscription status:", status);
-          if (err) {
-            console.error("[useConversationMessages] Subscription error:", err);
-          }
-        });
+        .subscribe();
     },
     { immediate: true },
   );

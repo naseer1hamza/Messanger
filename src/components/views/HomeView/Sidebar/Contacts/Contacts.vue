@@ -98,8 +98,8 @@ const loadFriends = async () => {
     }));
 
     updateContactGroups();
-  } catch (err) {
-    console.error("Failed to load friends:", err);
+  } catch {
+    // silently fail; friends.value remains empty
   } finally {
     loading.value = false;
   }

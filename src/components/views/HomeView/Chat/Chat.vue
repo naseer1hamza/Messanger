@@ -6,6 +6,7 @@ import { computed, provide, ref, watchEffect } from "vue";
 import { useRoute } from "vue-router";
 
 import { useConversationMessages } from "@src/composables/useConversationMessages";
+import { useTypingIndicator } from "@src/composables/useTypingIndicator";
 import { getActiveConversationId } from "@src/utils";
 
 import NoChatSelected from "@src/components/states/empty-states/NoChatSelected.vue";
@@ -24,6 +25,24 @@ const activeRouteConversationId = computed(() => {
 });
 
 useConversationMessages(activeRouteConversationId);
+
+const currentUserId = computed(() => store.authUser?.id);
+const currentDisplayName = computed(
+  () =>
+    store.profileData?.display_name ||
+    store.profileData?.username ||
+    store.authUser?.email ||
+    "Me",
+);
+
+const { typingUsers, broadcastTyping } = useTypingIndicator(
+  activeRouteConversationId,
+  currentUserId,
+  currentDisplayName,
+);
+
+provide("typingUsers", typingUsers);
+provide("broadcastTyping", broadcastTyping);
 
 // search the selected conversation using activeConversationId.
 const activeConversationComputed = computed(() => {
@@ -46,12 +65,9 @@ const activeConversationComputed = computed(() => {
   }
 });
 
-// Create a ref that tracks the computed value for provide/inject
 const activeConversation = ref(activeConversationComputed.value);
 watchEffect(() => {
-  console.log("[Chat] activeConversationComputed changed:", activeConversationComputed.value?.id);
   activeConversation.value = activeConversationComputed.value;
-  console.log("[Chat] activeConversation.value updated:", activeConversation.value?.id);
 });
 
 // provide the active conversation ref to all children
