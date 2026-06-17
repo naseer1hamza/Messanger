@@ -2,7 +2,7 @@
 import type { IContact } from "@src/types";
 
 import useStore from "@src/store/store";
-import { getFullName } from "@src/utils";
+import { formatLastSeen, getFullName } from "@src/utils";
 
 defineEmits(["contactSelected"]);
 
@@ -71,7 +71,9 @@ const store = useStore();
         </div>
 
         <!--contact last seen-->
-        <p class="body-2 text-black/70 dark:text-white/70">Last seen 2:30 am</p>
+        <p v-if="formatLastSeen(props.contact.lastSeen)" class="body-2 text-black/70 dark:text-white/70">
+          {{ formatLastSeen(props.contact.lastSeen) }}
+        </p>
       </div>
 
       <!--optional checkbox-->

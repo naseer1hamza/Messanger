@@ -5,7 +5,6 @@ import { computed, ref } from "vue";
 
 import useStore from "@src/store/store";
 import {
-  getActiveConversationId,
   getAvatar,
   getConversationIndex,
   getName,
@@ -13,6 +12,7 @@ import {
   shorten,
 } from "@src/utils";
 import router from "@src/router";
+import { useRoute } from "vue-router";
 
 import {
   ArchiveBoxArrowDownIcon,
@@ -28,6 +28,7 @@ const props = defineProps<{
 }>();
 
 const store = useStore();
+const route = useRoute();
 
 const showContextMenu = ref(false);
 
@@ -76,9 +77,10 @@ const handleRemoveUnread = () => {
 };
 
 // (computed property) determines if this conversation is active.
-const isActive = computed(
-  () => getActiveConversationId() === props.conversation.id,
-);
+const isActive = computed(() => {
+  const id = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id;
+  return id === props.conversation.id;
+});
 </script>
 
 <template>
@@ -130,7 +132,7 @@ const isActive = computed(
             <p
               v-if="
                 props.conversation.draftMessage &&
-                props.conversation.id !== getActiveConversationId()
+                !isActive
               "
               class="body-2 flex justify-start items-center text-red-400"
             >

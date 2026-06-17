@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 import useStore from "@src/store/store";
 import { supabase } from "@src/lib/supabase";
@@ -10,7 +10,6 @@ import {
   InformationCircleIcon,
 } from "@heroicons/vue/24/outline";
 import Dropdown from "@src/components/ui/navigation/Dropdown/Dropdown.vue";
-import DropdownLink from "@src/components/ui/navigation/Dropdown/DropdownLink.vue";
 import { RouterLink } from "vue-router";
 
 const props = defineProps<{
@@ -22,21 +21,6 @@ const props = defineProps<{
 
 const store = useStore();
 const router = useRouter();
-
-// Load user avatar on mount
-onMounted(async () => {
-  if (store.authUser && !store.profileData.avatar_url) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("avatar_url")
-      .eq("id", store.authUser.id)
-      .single();
-
-    if (data?.avatar_url) {
-      store.profileData.avatar_url = data.avatar_url;
-    }
-  }
-});
 
 const avatarUrl = computed(() => {
   return store.profileData.avatar_url || store.user?.avatar || "";

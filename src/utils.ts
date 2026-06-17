@@ -27,8 +27,8 @@ export const getFullName = (contact: IContact, hyphen?: boolean) => {
  * @returns A contact object representing the other user in the conversation.
  */
 export const getOddContact = (conversation: IConversation | undefined) => {
-  if (!conversation) return undefined;
-  
+  if (!conversation || !Array.isArray(conversation.contacts)) return undefined;
+
   const store = useStore();
 
   let oddContact;
@@ -209,6 +209,44 @@ export const getMessageById = (
   if (messageId) {
     return conversation.messages.find((message) => message.id === messageId);
   }
+};
+
+/**
+ * Format a lastSeen date into a human-readable string.
+ * - Within 1 min  → "Online"
+ * - Same day      → "Today at 2:30 pm"
+ * - Yesterday     → "Yesterday at 2:30 pm"
+ * - Same year     → "Dec 16 at 2:30 pm"
+ * - Older         → "Dec 16, 2019"
+ */
+export const formatLastSeen = (lastSeen: Date | undefined | null): string => {
+  if (!lastSeen) return "";
+
+  const now = new Date();
+  const diffMs = now.getTime() - lastSeen.getTime();
+  const diffMins = diffMs / 60000;
+
+  if (diffMins < 1) return "Online";
+
+  const time = lastSeen.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+
+  if (lastSeen >= todayStart) return `Today at ${time}`;
+  if (lastSeen >= yesterdayStart) return `Yesterday at ${time}`;
+
+  const sameYear = lastSeen.getFullYear() === now.getFullYear();
+  const date = lastSeen.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+
+  return sameYear ? `${date} at ${time}` : date;
 };
 
 /**

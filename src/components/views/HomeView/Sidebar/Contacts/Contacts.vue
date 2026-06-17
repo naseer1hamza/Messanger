@@ -345,6 +345,15 @@ onMounted(() => {
           </IconButton>
 
           <template v-else>
+            <IconButton
+              @click="store.activeSidebarComponent = 'messages'"
+              class="ic-btn-ghost-primary w-7 h-7"
+              title="Back to messages"
+              aria-label="Back to messages"
+            >
+              <ArrowLeftIcon class="w-[1.25rem] h-[1.25rem]" />
+            </IconButton>
+
             <div class="relative">
               <IconButton
                 @click="openRequestsView"

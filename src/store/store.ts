@@ -23,6 +23,7 @@ const defaultSettings: ISettings = {
   borderedTheme: false,
   allowNotifications: false,
   keepNotifications: false,
+  chatBackground: "",
 };
 
 const useStore = defineStore("chat", () => {
@@ -42,6 +43,7 @@ const useStore = defineStore("chat", () => {
     display_name?: string;
     bio?: string;
     avatar_url?: string;
+    chat_background_url?: string;
   }>({});
 
   // app data refs

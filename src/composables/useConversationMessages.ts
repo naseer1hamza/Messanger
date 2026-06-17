@@ -60,6 +60,8 @@ type ProfileRow = {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
+  last_seen: string | null;
 };
 
 function splitDisplayName(displayName: string | null, username: string) {
@@ -82,7 +84,8 @@ function profileToContact(p: ProfileRow): IContact {
     lastName,
     avatar: p.avatar_url || "",
     email: "",
-    lastSeen: new Date(),
+    lastSeen: p.last_seen ? new Date(p.last_seen) : new Date(0),
+    bio: p.bio || undefined,
   };
 }
 
@@ -126,7 +129,7 @@ async function fetchMessagesForConversation(
   const senderIds = [...new Set(list.map((r) => r.sender_id))];
   const { data: profiles, error: profileError } = await supabase
     .from("profiles")
-    .select("id, username, display_name, avatar_url")
+    .select("id, username, display_name, avatar_url, bio, last_seen")
     .in("id", senderIds);
 
   if (profileError) return [];
@@ -175,29 +178,51 @@ export function useConversationMessages(
     applyMessages(id, messages);
   };
 
+  const subscribeToChannel = (id: string) => {
+    clearChannel();
+    channel = supabase
+      .channel(`messages:${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${id}`,
+        },
+        () => {
+          void reload(id);
+        },
+      )
+      .subscribe();
+  };
+
   watch(
     conversationId,
     async (id) => {
       clearChannel();
       if (!id || !isSupabaseConversationId(id)) return;
 
-      await reload(id);
+      const idx = getConversationIndex(id);
 
-      channel = supabase
-        .channel(`messages:${id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "messages",
-            filter: `conversation_id=eq.${id}`,
+      if (idx !== undefined) {
+        // Conversation already in store — load messages immediately
+        await reload(id);
+        subscribeToChannel(id);
+      } else {
+        // Conversation not yet in store (loadConversations still in-flight).
+        // Watch for it to appear, then load messages once.
+        const stopWatch = watch(
+          () => getConversationIndex(id),
+          async (newIdx) => {
+            if (newIdx === undefined) return;
+            stopWatch();
+            await reload(id);
+            subscribeToChannel(id);
           },
-          () => {
-            void reload(id);
-          },
-        )
-        .subscribe();
+          { immediate: true },
+        );
+      }
     },
     { immediate: true },
   );

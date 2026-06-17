@@ -25,7 +25,7 @@ const typingUsers = inject<Ref<Map<string, string>>>("typingUsers", ref(new Map(
 const typingLabel = computed(() => {
   const names = Array.from(typingUsers.value.values());
   if (names.length === 0) return "";
-  if (names.length === 1) return `${names[0]} is typing`;
+  if (names.length === 1) return `typing`;
   if (names.length === 2) return `${names[0]} and ${names[1]} are typing`;
   return "Several people are typing";
 });
@@ -69,6 +69,9 @@ watch(typingUsers, scrollToBottom);
   <div
     ref="container"
     class="grow px-5 py-5 flex flex-col overflow-y-scroll scrollbar-hidden"
+    :style="store.settings.chatBackground
+      ? { backgroundImage: `url(${store.settings.chatBackground})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'local' }
+      : {}"
   >
     <div
       v-if="store.status !== 'loading' && activeConversation?.messages"

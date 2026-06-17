@@ -3,7 +3,7 @@ import type { IContact, IConversation } from "@src/types";
 
 import { computed, ref } from "vue";
 
-import { getAvatar, getName, getOddContact } from "@src/utils";
+import { formatLastSeen, getAvatar, getName, getOddContact } from "@src/utils";
 
 import {
   ArrowLeftOnRectangleIcon,
@@ -118,7 +118,7 @@ const imageUrl = computed(() => {
               <!--or number of group members-->
               {{
                 conversation?.type === "couple" || props.contact
-                  ? "Last seen Dec 16, 2019"
+                  ? formatLastSeen(getOddContact(props.conversation)?.lastSeen)
                   : `${conversation?.contacts?.length || 0} Contacts`
               }}
             </p>

@@ -20,6 +20,8 @@ type ParticipantRow = {
     username: string;
     display_name: string | null;
     avatar_url: string | null;
+    bio: string | null;
+    last_seen: string | null;
   } | null;
 };
 
@@ -44,6 +46,8 @@ function profileToContact(p: {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
+  bio?: string | null;
+  last_seen?: string | null;
 }): IContact {
   const displayName = p.display_name?.trim();
   const parts = displayName ? displayName.split(/\s+/) : [];
@@ -56,8 +60,9 @@ function profileToContact(p: {
     lastName,
     avatar: p.avatar_url || "",
     email: "",
-    lastSeen: new Date(),
+    lastSeen: p.last_seen ? new Date(p.last_seen) : new Date(0),
     username: p.username,
+    bio: p.bio || undefined,
   };
 }
 
@@ -125,7 +130,9 @@ async function fetchConversationsFromSupabase(): Promise<IConversation[]> {
             id,
             username,
             display_name,
-            avatar_url
+            avatar_url,
+            bio,
+            last_seen
           )
         `,
         )
@@ -196,10 +203,22 @@ export function useConversationsList() {
   const loadConversations = async () => {
     const conversations = await fetchConversationsFromSupabase();
 
-    // Merge with existing to preserve local-only threads
-    const existingIds = new Set(store.conversations.map((c) => c.id));
-    const newConvs = conversations.filter((c) => !existingIds.has(c.id));
-    store.conversations.push(...newConvs);
+    for (const fresh of conversations) {
+      const idx = store.conversations.findIndex((c) => c.id === fresh.id);
+      if (idx === -1) {
+        store.conversations.push({
+          ...fresh,
+          contacts: Array.isArray(fresh.contacts) ? fresh.contacts : [],
+          messages: Array.isArray(fresh.messages) ? fresh.messages : [],
+        });
+      } else {
+        // Update contacts and metadata; preserve messages (managed by useConversationMessages)
+        store.conversations[idx].contacts = Array.isArray(fresh.contacts) ? fresh.contacts : [];
+        store.conversations[idx].type = fresh.type;
+        if (fresh.name !== undefined) store.conversations[idx].name = fresh.name;
+        if (fresh.avatar !== undefined) store.conversations[idx].avatar = fresh.avatar;
+      }
+    }
   };
 
   const setupRealtimeSubscription = () => {

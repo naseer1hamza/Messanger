@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { IConversation } from "@src/types";
 
-import { inject, ref } from "vue";
+import { computed, inject, ref } from "vue";
 
 import router from "@src/router";
 import useStore from "@src/store/store";
-import { getAvatar, getName } from "@src/utils";
+import { formatLastSeen, getAvatar, getName, getOddContact } from "@src/utils";
 
 import {
   ChevronLeftIcon,
@@ -30,6 +30,11 @@ const store = useStore();
 const activeConversation = <IConversation>inject("activeConversation");
 
 const showDropdown = ref(false);
+
+const lastSeenText = computed(() => {
+  const contact = getOddContact(activeConversation);
+  return contact?.lastSeen ? formatLastSeen(contact.lastSeen) : "";
+});
 
 // (event) close dropdown menu when click item
 const handleCloseDropdown = () => {
@@ -102,11 +107,12 @@ const handleOpenVoiceCallModal = () => {
         </p>
 
         <p
+          v-if="lastSeenText"
           class="body-2 text-black/70 dark:text-white/70 font-extralight rounded-[.25rem]"
           tabindex="0"
-          aria-label="Last seen december 16, 2019"
+          :aria-label="lastSeenText"
         >
-          Last seen Dec 16, 2019
+          {{ lastSeenText }}
         </p>
       </div>
     </div>

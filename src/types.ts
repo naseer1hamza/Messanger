@@ -18,6 +18,8 @@ export interface IContact {
   lastSeen: Date;
   /** From `profiles.username` when loaded from Supabase */
   username?: string;
+  /** From `profiles.bio` when loaded from Supabase */
+  bio?: string;
 }
 
 export interface IPreviewData {
@@ -95,6 +97,7 @@ export interface ISettings {
   borderedTheme: boolean;
   allowNotifications: boolean;
   keepNotifications: boolean;
+  chatBackground?: string;
 }
 
 export interface ICall {

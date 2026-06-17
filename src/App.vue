@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 
 import useStore from "@src/store/store";
+import { supabase } from "@src/lib/supabase";
 import { useConversationsList } from "@src/composables/useConversationsList";
 
 import FadeTransition from "@src/components/ui/transitions/FadeTransition.vue";
@@ -46,6 +47,30 @@ onMounted(async () => {
 
   // Initialize auth state
   await store.initAuth();
+
+  // Load profile data now that authUser is set, so the avatar and display name
+  // are available immediately without needing to open Settings first.
+  if (store.authUser) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("username, display_name, bio, avatar_url, chat_background_url")
+      .eq("id", store.authUser.id)
+      .single();
+
+    if (data) {
+      store.profileData = {
+        username: data.username ?? undefined,
+        display_name: data.display_name ?? undefined,
+        bio: data.bio ?? undefined,
+        avatar_url: data.avatar_url ?? undefined,
+        chat_background_url: data.chat_background_url ?? undefined,
+      };
+
+      if (data.chat_background_url) {
+        store.settings.chatBackground = data.chat_background_url;
+      }
+    }
+  }
 
   await loadConversations();
 

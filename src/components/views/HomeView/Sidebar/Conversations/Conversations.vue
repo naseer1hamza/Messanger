@@ -3,9 +3,10 @@ import type { IConversation } from "@src/types";
 import type { Ref } from "vue";
 
 import { onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
 import useStore from "@src/store/store";
-import { getActiveConversationId, getName } from "@src/utils";
+import { getName } from "@src/utils";
 import { PencilSquareIcon } from "@heroicons/vue/24/outline";
 import ComposeModal from "@src/components/shared/modals/ComposeModal/ComposeModal.vue";
 import NoConversation from "@src/components/states/empty-states/NoConversation.vue";
@@ -18,6 +19,7 @@ import ConversationsList from "@src/components/views/HomeView/Sidebar/Conversati
 import SidebarHeader from "@src/components/views/HomeView/Sidebar/SidebarHeader.vue";
 
 const store = useStore();
+const route = useRoute();
 
 const keyword: Ref<string> = ref("");
 
@@ -63,10 +65,11 @@ const closeComposeModal = () => {
 // if the active conversation is in the archive
 // then open the archive
 onMounted(() => {
-  let conversation = store.archivedConversations.find(
-    (conversation) => conversation.id === getActiveConversationId(),
-  );
-  if (conversation) openArchive.value = true;
+  const raw = route.params.id;
+  const activeId = Array.isArray(raw) ? raw[0] : raw;
+  if (activeId && store.archivedConversations.some((c) => c.id === activeId)) {
+    openArchive.value = true;
+  }
 });
 </script>
 

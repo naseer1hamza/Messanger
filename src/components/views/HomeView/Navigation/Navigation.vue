@@ -7,9 +7,7 @@ import {
   BellIcon,
   ChatBubbleOvalLeftIcon,
   Cog6ToothIcon,
-  MoonIcon,
   PhoneIcon,
-  SunIcon,
   UserIcon,
 } from "@heroicons/vue/24/solid";
 import AccountDropdown from "@src/components/views/HomeView/Navigation/AccountDropdown.vue";
@@ -103,18 +101,10 @@ const handleActiveSidebarComponentChange = (value: string) => {
       </nav>
     </div>
 
-    <!--secondary navigation-->
+      <!--secondary navigation-->
     <div>
       <nav aria-label="Extra navigation" class="xs:hidden md:block">
         <ul>
-          <!--toggle dark mode button-->
-          <li>
-            <NavLink
-              :icon="store.settings.darkMode ? SunIcon : MoonIcon"
-              title="Night mode"
-              @click="store.settings.darkMode = !store.settings.darkMode"
-            />
-          </li>
           <!--settings button-->
           <li>
             <NavLink
