@@ -8,14 +8,17 @@ import { hasAttachments } from "@src/utils";
 import { useFocusTrap } from "@vueuse/integrations/useFocusTrap";
 import VideoPlayer from "@src/components/ui/data-display/VideoPlayer.vue";
 import IconButton from "@src/components/ui/inputs/IconButton.vue";
-import Toolbar from "@src/components/ui/data-display/Carousel/Toolbar.vue";
-import ScaleTransition from "@src/components/ui/transitions/ScaleTransition.vue";
-import FadeTransition from "@src/components/ui/transitions/FadeTransition.vue";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/vue/24/solid";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  XMarkIcon,
+  MagnifyingGlassPlusIcon,
+  MagnifyingGlassMinusIcon,
+} from "@heroicons/vue/24/outline";
 
 const props = defineProps<{
   open: boolean;
-  startingId?: number;
+  startingId?: string | number;
   closeCarousel: () => void;
 }>();
 
@@ -23,8 +26,8 @@ const carousel: Ref<HTMLElement | undefined> = ref();
 
 const { activate, deactivate } = useFocusTrap(carousel);
 
-// the active conversation
-const conversation = <IConversation>inject("activeConversation");
+// the active conversation — provided as Ref<IConversation | undefined> by Chat.vue
+const conversationRef = inject<Ref<IConversation | undefined>>("activeConversation");
 
 // index of the current open attachment in the
 const currentIndex = ref(0);
@@ -34,21 +37,22 @@ const moved = ref(false);
 
 // all the attachment in the conversation or an empty array
 const attachments = computed(() => {
-  let attachments = [];
+  const conversation = conversationRef?.value;
+  const result: IAttachment[] = [];
 
-  if (conversation) {
-    for (let message of conversation.messages) {
+  if (conversation?.messages) {
+    for (const message of conversation.messages) {
       if (message.attachments && hasAttachments(message)) {
-        for (let attachment of message.attachments) {
+        for (const attachment of message.attachments) {
           if (["video", "image"].includes(attachment.type)) {
-            attachments.push(attachment);
+            result.push(attachment);
           }
         }
       }
     }
   }
 
-  return attachments;
+  return result;
 });
 
 // the index of the attachment we start from
@@ -56,7 +60,7 @@ const startingIndex = computed(() => {
   let startingIndex: number | undefined;
 
   attachments.value.forEach((value, index) => {
-    if (value.id === props.startingId) {
+    if (String(value.id) === String(props.startingId)) {
       startingIndex = index;
     }
   });
@@ -222,95 +226,111 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="relative z-10"
-    aria-label="media carousel"
-    role="dialog"
-    aria-modal="true"
-  >
-    <!--overlay-->
-    <FadeTransition>
+  <Teleport to="body">
+    <div v-if="props.open" aria-label="media carousel" role="dialog" aria-modal="true">
+      <!--dark overlay — clicking closes the viewer-->
       <div
-        v-show="props.open"
-        class="fixed inset-0 bg-black/60 transition-opacity"
+        class="fixed inset-0 bg-black/80 z-[200]"
+        @click="handleCloseCarousel"
       ></div>
-    </FadeTransition>
 
-    <!--content-->
-    <ScaleTransition>
-      <div v-show="props.open" class="fixed inset-0 z-10">
-        <div
-          v-if="props.startingId"
-          ref="carousel"
-          class="h-full flex flex-col"
-        >
-          <!--toolbar-->
-          <Toolbar
-            class="absolute right-0 z-30 mr-5 mt-5"
-            :is-image="Boolean(selectedAttachment.type === 'image')"
-            :handle-close-carousel="handleCloseCarousel"
-            :handle-increase-zoom="handleIncreaseZoom"
-            :handle-decrease-zoom="handleDecreaseZoom"
+      <!--viewer content-->
+      <div
+        v-if="props.startingId !== undefined"
+        ref="carousel"
+        class="fixed inset-0 z-[201] flex flex-col"
+      >
+        <!--top bar with controls-->
+        <div class="flex items-center justify-end gap-3 px-4 py-3 bg-black/40">
+          <!--decrease zoom-->
+          <button
+            v-if="selectedAttachment?.type === 'image'"
+            title="Zoom out"
+            aria-label="Zoom out"
+            class="text-white/70 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+            @click.stop="handleDecreaseZoom"
+          >
+            <MagnifyingGlassMinusIcon class="w-6 h-6" />
+          </button>
+
+          <!--increase zoom-->
+          <button
+            v-if="selectedAttachment?.type === 'image'"
+            title="Zoom in"
+            aria-label="Zoom in"
+            class="text-white/70 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+            @click.stop="handleIncreaseZoom"
+          >
+            <MagnifyingGlassPlusIcon class="w-6 h-6" />
+          </button>
+
+          <!--close button-->
+          <button
+            title="Close"
+            aria-label="Close image viewer"
+            class="text-white bg-white/20 hover:bg-white/30 transition-colors p-2 rounded-full"
+            @click.stop="handleCloseCarousel"
+          >
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+        </div>
+
+        <!--image / video area-->
+        <div class="relative flex-1 flex items-center justify-center overflow-hidden">
+          <!--left nav-->
+          <IconButton
+            v-if="isThereAPrevious()"
+            title="Previous"
+            aria-label="Previous item"
+            class="ic-btn-contained-glass absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3"
+            @click.stop="handleMoveToPreviousItem"
+          >
+            <ChevronLeftIcon class="w-6 h-6" />
+          </IconButton>
+
+          <!--image-->
+          <img
+            v-if="selectedAttachment?.type === 'image'"
+            :src="selectedAttachment.url"
+            :key="selectedAttachment.id"
+            :alt="selectedAttachment.name"
+            ref="image"
+            class="absolute w-auto md:max-w-175 xs:max-w-85 cursor-grab transition-[transform,opacity] duration-200"
+            :class="{ 'opacity-0': imageInvisibility }"
+            :style="{
+              transform: `scale(${zoom})`,
+              top: `${imageTop}px`,
+              left: `${imageLeft}px`,
+            }"
+            @load="handleImageLoad"
+            @mousedown.stop="handleStartMovingImage"
           />
 
-          <div
-            class="relative w-full h-full flex items-center justify-center overflow-hidden"
+          <!--video-->
+          <VideoPlayer
+            v-if="selectedAttachment?.type === 'video'"
+            :id="'video-player-' + selectedAttachment.id"
+            :url="selectedAttachment.url"
+            :name="selectedAttachment.name"
+            :thumbnail="selectedAttachment.thumbnail as string"
+            :key="selectedAttachment.id"
+            class="transition-[transform,opacity] duration-200"
+            :class="{ 'opacity-0': imageInvisibility }"
+            @videoLoad="handleImageLoad"
+          />
+
+          <!--right nav-->
+          <IconButton
+            v-if="isThereANext()"
+            title="Next"
+            aria-label="Next item"
+            class="ic-btn-contained-glass absolute right-4 top-1/2 -translate-y-1/2 z-10 p-3"
+            @click.stop="handleMoveToNextItem"
           >
-            <!--Left controls-->
-            <IconButton
-              title="previous"
-              aria-label="previous item"
-              @click="handleMoveToPreviousItem"
-              :class="{ hidden: !isThereAPrevious() }"
-              class="ic-btn-contained-glass absolute top-[50%] z-30 left-0 flex items-center justify-center mr-5 ml-5 p-4"
-            >
-              <ChevronLeftIcon class="w-6 h-6" />
-            </IconButton>
-
-            <!--Image-->
-            <img
-              class="absolute w-auto md:max-w-175 xs:max-w-85 cursor-grab transition-[transform,opacity] duration-200"
-              :class="{ 'opacity-0': imageInvisibility }"
-              :style="{
-                transform: `scale(${zoom})`,
-                top: `${imageTop}px`,
-                left: `${imageLeft}px`,
-              }"
-              v-if="selectedAttachment.type === 'image'"
-              :src="selectedAttachment?.url"
-              :key="selectedAttachment.id"
-              :alt="selectedAttachment.name"
-              ref="image"
-              @load="handleImageLoad"
-              @mousedown="handleStartMovingImage"
-            />
-
-            <!--Video-->
-            <VideoPlayer
-              class="transition-[transform,opacity] duration-200"
-              :class="{ 'opacity-0': imageInvisibility }"
-              :id="'video-player-' + selectedAttachment.id"
-              v-if="selectedAttachment.type === 'video'"
-              :url="selectedAttachment.url"
-              :name="selectedAttachment.name"
-              :thumbnail="<string>selectedAttachment.thumbnail"
-              :key="selectedAttachment.id"
-              @videoLoad="handleImageLoad"
-            />
-
-            <!--right controls-->
-            <IconButton
-              title="next"
-              aria-label="next item"
-              @click="handleMoveToNextItem"
-              :class="{ hidden: !isThereANext() }"
-              class="ic-btn-contained-glass absolute top-[50%] z-30 right-0 flex items-center justify-center p-4 ml-5 mr-5"
-            >
-              <ChevronRightIcon class="w-6 h-6" />
-            </IconButton>
-          </div>
+            <ChevronRightIcon class="w-6 h-6" />
+          </IconButton>
         </div>
       </div>
-    </ScaleTransition>
-  </div>
+    </div>
+  </Teleport>
 </template>

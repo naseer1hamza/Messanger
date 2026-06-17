@@ -67,7 +67,8 @@ function profileToContact(p: {
 }
 
 function formatMessageTime(iso: string): string {
-  const d = new Date(iso);
+  const hasTimezone = iso.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(iso);
+  const d = new Date(hasTimezone ? iso : iso + "Z");
   return d.toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",

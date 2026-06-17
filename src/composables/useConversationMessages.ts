@@ -3,7 +3,7 @@ import { onUnmounted, watch, type ComputedRef } from "vue";
 
 import { supabase } from "@src/lib/supabase";
 import useStore from "@src/store/store";
-import type { IContact, IMessage } from "@src/types";
+import type { IAttachment, IContact, IMessage } from "@src/types";
 import { getConversationIndex } from "@src/utils";
 
 /** Standard UUID string shape (avoids treating mock ids like `"1"` as Supabase rows). */
@@ -90,7 +90,11 @@ function profileToContact(p: ProfileRow): IContact {
 }
 
 function formatMessageTime(iso: string): string {
-  const d = new Date(iso);
+  // Supabase returns UTC timestamps; if the string has no timezone designator
+  // JavaScript would treat it as local time — appending 'Z' forces UTC parsing
+  // so toLocaleTimeString correctly converts to the user's local time.
+  const hasTimezone = iso.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(iso);
+  const d = new Date(hasTimezone ? iso : iso + "Z");
   return d.toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
@@ -98,10 +102,34 @@ function formatMessageTime(iso: string): string {
 }
 
 function mapRowToMessage(row: MessageRow, sender: ProfileRow): IMessage {
+  let attachments: IAttachment[] | undefined;
+  let content: string | undefined = row.content ?? undefined;
+
+  // Image messages store attachment metadata as JSON in the content field
+  if (row.type === "image" && row.content) {
+    try {
+      const parsed = JSON.parse(row.content) as {
+        attachments: Array<{ url: string; name: string; size: string; type: string }>;
+        caption?: string;
+      };
+      attachments = parsed.attachments.map((a, i) => ({
+        id: String(i),
+        url: a.url,
+        name: a.name,
+        size: a.size,
+        type: a.type,
+      }));
+      content = parsed.caption || undefined;
+    } catch {
+      // malformed content — fall back to treating as plain text
+    }
+  }
+
   return {
     id: row.id,
     type: row.type || "text",
-    content: row.content ?? undefined,
+    content,
+    attachments,
     date: formatMessageTime(row.created_at),
     timestamp: new Date(row.created_at),
     sender: profileToContact(sender),
@@ -370,4 +398,72 @@ export async function reloadConversationMessages(
   const idx = getConversationIndex(conversationId);
   if (idx === undefined) return;
   store.conversations[idx].messages = messages;
+}
+
+/**
+ * Upload one or more images to Supabase Storage and send them as a single
+ * message (type = "image"). The attachment metadata and optional caption are
+ * stored as JSON in the message's `content` column.
+ */
+export async function sendImageMessage(params: {
+  conversationId: string;
+  files: File[];
+  caption?: string;
+}): Promise<void> {
+  if (!params.files.length) return;
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError) throwFromPostgrest(userError);
+  if (!user) throw new Error("Not signed in");
+
+  await ensureDirectConversationRowInSupabase(params.conversationId, user.id);
+
+  // Upload each image and collect public URLs
+  const attachments: Array<{ url: string; name: string; size: string; type: string }> = [];
+
+  for (const file of params.files) {
+    const ext = file.name.split(".").pop() || "jpg";
+    const fileName = `${user.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const filePath = `${params.conversationId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("message-images")
+      .upload(filePath, file, { upsert: false });
+
+    if (uploadError) throwFromPostgrest(uploadError);
+
+    const { data: urlData } = supabase.storage
+      .from("message-images")
+      .getPublicUrl(filePath);
+
+    const kb = Math.round(file.size / 1024);
+    const sizeLabel = kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
+
+    attachments.push({
+      url: urlData.publicUrl,
+      name: file.name,
+      size: sizeLabel,
+      type: "image",
+    });
+  }
+
+  const content = JSON.stringify({
+    attachments,
+    caption: params.caption || "",
+  });
+
+  const { error } = await supabase.from("messages").insert({
+    conversation_id: params.conversationId,
+    sender_id: user.id,
+    content,
+    type: "image",
+    reply_to: null,
+  });
+
+  if (error) throwFromPostgrest(error);
+
+  await reloadConversationMessages(params.conversationId);
 }
