@@ -146,7 +146,7 @@ const handleClickOutside = (event: Event) => {
               <!--dropdown menu button-->
               <IconButton
                 title="menu"
-                @click="(event) => handleToggleDropdown(event, index)"
+                @click="(event: MouseEvent) => handleToggleDropdown(event, index)"
                 class="open-menu w-6 h-6"
               >
                 <EllipsisVerticalIcon class="open-menu h-5 w-5" tabindex="0" />

@@ -46,8 +46,8 @@ const props = defineProps<{
         <!--message-->
         <ScrollBox class="max-h-57.5 overflow-y-scroll">
           <MessageItem
-            v-if="props.conversation?.messages?.length > 0"
-            v-for="(message, index) in props.conversation.messages"
+            v-if="(props.conversation?.messages?.length ?? 0) > 0"
+            v-for="(message, index) in props.conversation?.messages"
             :message="message"
             :key="index"
           />

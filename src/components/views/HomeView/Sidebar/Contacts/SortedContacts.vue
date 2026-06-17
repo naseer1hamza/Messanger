@@ -114,7 +114,7 @@ const handleClickOutside = (event: Event) => {
           <IconButton
             :id="'open-contact-menu-' + index"
             class="open-menu w-6 h-6"
-            @click="(event) => handleToggleDropdown(event, groupIndex, index)"
+            @click="(event: MouseEvent) => handleToggleDropdown(event, groupIndex, index)"
             :aria-expanded="
               (dropdownMenuStates as boolean[][])[groupIndex][index]
             "

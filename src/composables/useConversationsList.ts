@@ -141,7 +141,7 @@ async function fetchConversationsFromSupabase(): Promise<IConversation[]> {
 
       if (pError || !participants) continue;
 
-      const contacts: IContact[] = (participants as ParticipantRow[])
+      const contacts: IContact[] = (participants as unknown as ParticipantRow[])
         .filter((p) => p.profiles)
         .map((p) => profileToContact(p.profiles!));
 

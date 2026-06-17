@@ -73,7 +73,7 @@ export function useFriendsList() {
 
       if (error) throw error;
 
-      friends.value = (data || []).map((row: FriendRow) => mapFriendRow(row));
+      friends.value = ((data || []) as unknown as FriendRow[]).map((row) => mapFriendRow(row));
     } catch (e) {
       loadError.value =
         e instanceof Error ? e.message : "Could not load contacts.";
