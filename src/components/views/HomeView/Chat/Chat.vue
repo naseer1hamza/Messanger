@@ -15,11 +15,11 @@ import ChatBottom from "@src/components/views/HomeView/Chat/ChatBottom/ChatBotto
 import ChatMiddle from "@src/components/views/HomeView/Chat/ChatMiddle/ChatMiddle.vue";
 import PinnedMessage from "@src/components/views/HomeView/Chat/ChatTop/PinnedMessage.vue";
 import SelectSection from "@src/components/views/HomeView/Chat/ChatTop/SelectSection.vue";
+import ConversationInfoSection from "@src/components/views/HomeView/Chat/ChatTop/ConversationInfoSection.vue";
 import ConversationInfoModal from "@src/components/shared/modals/ConversationInfoModal/ConversationInfoModal.vue";
 import OutgoingCallModal from "@src/components/shared/modals/OutgoingCallModal/OutgoingCallModal.vue";
 import SearchModal from "@src/components/shared/modals/SearchModal/SearchModal.vue";
 import VoiceCallModal from "@src/components/shared/modals/VoiceCallModal/VoiceCallModal.vue";
-import ContactPanel from "@src/components/views/HomeView/Chat/ContactPanel/ContactPanel.vue";
 
 const store = useStore();
 const route = useRoute();
@@ -178,28 +178,25 @@ const handleCloseVoiceCallModal = (endCall: boolean) => {
   >
     <!--chat column-->
     <div class="flex-1 min-w-0 flex flex-col h-full relative">
-      <!--select mode toolbar — only shown when selecting messages-->
-      <Transition
-        enter-active-class="transition-all duration-150 ease-out"
-        enter-from-class="opacity-0 -translate-y-2"
-        enter-to-class="opacity-100 translate-y-0"
-        leave-active-class="transition-all duration-100 ease-in"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 -translate-y-2"
+      <!--chat header banner-->
+      <div
+        class="w-full min-h-21 px-5 py-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 transition-colors duration-500"
       >
-        <div
+        <SelectSection
           v-if="selectMode"
-          class="w-full px-5 py-3 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0"
-        >
-          <SelectSection
-            :select-mode="selectMode"
-            :select-all="selectAll"
-            :handle-close-select="handleCloseSelect"
-            :handle-select-all="handleSelectAll"
-            :handle-deselect-all="handleDeselectAll"
-          />
-        </div>
-      </Transition>
+          :select-mode="selectMode"
+          :select-all="selectAll"
+          :handle-close-select="handleCloseSelect"
+          :handle-select-all="handleSelectAll"
+          :handle-deselect-all="handleDeselectAll"
+        />
+        <ConversationInfoSection
+          v-else
+          :handle-open-info="() => (openInfo = true)"
+          :handle-open-search="() => (openSearch = true)"
+          :handle-open-voice-call="() => (openVoiceCall = true)"
+        />
+      </div>
 
       <!--pinned message-->
       <div
@@ -219,13 +216,6 @@ const handleCloseVoiceCallModal = (endCall: boolean) => {
       />
       <ChatBottom />
     </div>
-
-    <!--contact info panel-->
-    <ContactPanel
-      :handle-open-search="() => (openSearch = true)"
-      :handle-open-info="() => (openInfo = true)"
-      :handle-open-voice-call="() => (openVoiceCall = true)"
-    />
   </div>
 
   <NoChatSelected v-else />

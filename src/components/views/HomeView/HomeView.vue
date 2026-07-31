@@ -5,6 +5,7 @@ import { useRoute } from "vue-router";
 import useStore from "@src/store/store";
 
 import FadeTransition from "@src/components/ui/transitions/FadeTransition.vue";
+import Navigation from "@src/components/views/HomeView/Navigation/Navigation.vue";
 import Sidebar from "@src/components/views/HomeView/Sidebar/Sidebar.vue";
 
 const store = useStore();
@@ -22,6 +23,10 @@ const activeConversationId = computed(() => {
     <div
       class="xs:relative md:static h-full flex xs:flex-col md:flex-row overflow-hidden"
     >
+      <!--navigation rail-->
+      <Navigation
+        class="flex shrink-0 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700 transition-colors duration-500"
+      />
       <!--sidebar-->
       <Sidebar
         class="xs:grow-1 md:grow-0 xs:overflow-y-scroll md:overflow-visible scrollbar-hidden"

@@ -8,8 +8,8 @@ import {
   ChatBubbleOvalLeftIcon,
   Cog6ToothIcon,
   PhoneIcon,
-  UserIcon,
-} from "@heroicons/vue/24/solid";
+  UserGroupIcon,
+} from "@heroicons/vue/24/outline";
 import AccountDropdown from "@src/components/views/HomeView/Navigation/AccountDropdown.vue";
 import Logo from "@src/components/views/HomeView/Navigation/Logo.vue";
 import NavLink from "@src/components/views/HomeView/Navigation/NavLink.vue";
@@ -45,10 +45,20 @@ const handleActiveSidebarComponentChange = (value: string) => {
             />
           </li>
 
+          <!--voice call button-->
+          <li>
+            <NavLink
+              :icon="PhoneIcon"
+              title="Call log"
+              @click="() => handleActiveSidebarComponentChange('phone')"
+              :active="store.activeSidebarComponent === 'phone'"
+            />
+          </li>
+
           <!--contacts list button-->
           <li>
             <NavLink
-              :icon="UserIcon"
+              :icon="UserGroupIcon"
               title="Contacts"
               @click="() => handleActiveSidebarComponentChange('contacts')"
               :active="store.activeSidebarComponent === 'contacts'"
@@ -72,19 +82,9 @@ const handleActiveSidebarComponentChange = (value: string) => {
             <NavLink
               :icon="BellIcon"
               title="Notifications"
-              :notifications="3"
+              :notifications="store.notifications.length"
               @click="() => handleActiveSidebarComponentChange('notifications')"
               :active="store.activeSidebarComponent === 'notifications'"
-            />
-          </li>
-
-          <!--voice call button-->
-          <li>
-            <NavLink
-              :icon="PhoneIcon"
-              title="Call log"
-              @click="() => handleActiveSidebarComponentChange('phone')"
-              :active="store.activeSidebarComponent === 'phone'"
             />
           </li>
 

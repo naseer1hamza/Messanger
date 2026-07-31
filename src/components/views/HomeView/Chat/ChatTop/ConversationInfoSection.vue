@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { IConversation } from "@src/types";
 
-import { computed, inject, ref } from "vue";
+import { computed, inject, ref, watch } from "vue";
 
 import router from "@src/router";
 import useStore from "@src/store/store";
+import { supabase } from "@src/lib/supabase";
 import { formatLastSeen, getAvatar, getName, getOddContact } from "@src/utils";
 
 import {
@@ -15,6 +16,7 @@ import {
   NoSymbolIcon,
   PhoneIcon,
   ShareIcon,
+  VideoCameraIcon,
 } from "@heroicons/vue/24/outline";
 import IconButton from "@src/components/ui/inputs/IconButton.vue";
 import Dropdown from "@src/components/ui/navigation/Dropdown/Dropdown.vue";
@@ -23,6 +25,7 @@ import DropdownLink from "@src/components/ui/navigation/Dropdown/DropdownLink.vu
 const props = defineProps<{
   handleOpenInfo: () => void;
   handleOpenSearch: () => void;
+  handleOpenVoiceCall?: () => void;
 }>();
 
 const store = useStore();
@@ -35,6 +38,28 @@ const lastSeenText = computed(() => {
   const contact = getOddContact(activeConversation);
   return contact?.lastSeen ? formatLastSeen(contact.lastSeen) : "";
 });
+
+// Bio is fetched fresh from the DB so it always reflects the contact's latest profile
+const liveBio = ref<string>("");
+
+watch(
+  () => getOddContact(activeConversation)?.id,
+  async (id) => {
+    liveBio.value = "";
+    if (!id) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("bio")
+      .eq("id", id)
+      .single();
+    liveBio.value = data?.bio || "";
+  },
+  { immediate: true },
+);
+
+const bioText = computed(
+  () => liveBio.value || getOddContact(activeConversation)?.bio || "",
+);
 
 // (event) close dropdown menu when click item
 const handleCloseDropdown = () => {
@@ -63,7 +88,7 @@ const handleCloseConversation = () => {
 
 // (event) open the voice call modal and expand call
 const handleOpenVoiceCallModal = () => {
-  // TODO: implement voice calling
+  props.handleOpenVoiceCall?.();
 };
 </script>
 
@@ -107,7 +132,15 @@ const handleOpenVoiceCallModal = () => {
         </p>
 
         <p
-          v-if="lastSeenText"
+          v-if="bioText"
+          class="body-2 text-black/60 dark:text-white/60 font-extralight rounded-[.25rem] truncate max-w-100"
+          tabindex="0"
+          :aria-label="bioText"
+        >
+          {{ bioText }}
+        </p>
+        <p
+          v-else-if="lastSeenText"
           class="body-2 text-black/70 dark:text-white/70 font-extralight rounded-[.25rem]"
           tabindex="0"
           :aria-label="lastSeenText"
@@ -117,7 +150,33 @@ const handleOpenVoiceCallModal = () => {
       </div>
     </div>
 
-    <div class="flex" :class="{ hidden: store.status === 'loading' }">
+    <div class="flex items-center" :class="{ hidden: store.status === 'loading' }">
+      <!--voice call button-->
+      <IconButton
+        title="start voice call"
+        aria-label="start voice call"
+        @click="handleOpenVoiceCallModal"
+        class="ic-btn-ghost-primary w-7 h-7 mr-3"
+      >
+        <PhoneIcon
+          class="w-[1.25rem] h-[1.25rem] text-gray-400 group-hover:text-indigo-300"
+        />
+      </IconButton>
+
+      <!--video call button-->
+      <IconButton
+        title="start video call"
+        aria-label="start video call"
+        class="ic-btn-ghost-primary w-7 h-7 mr-3"
+      >
+        <VideoCameraIcon
+          class="w-[1.25rem] h-[1.25rem] text-gray-400 group-hover:text-indigo-300"
+        />
+      </IconButton>
+
+      <!--divider-->
+      <div class="w-px h-5 bg-gray-200 dark:bg-gray-600 mr-3" />
+
       <!--search button-->
       <IconButton
         title="search messages"

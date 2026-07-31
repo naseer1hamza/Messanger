@@ -25,7 +25,7 @@ const store = useStore();
     </a>
 
     <button
-      aria-label="avian logo"
+      aria-label="LinkAura logo"
       :class="{ hidden: SkipLinkFocused }"
       class="outline-none"
     >

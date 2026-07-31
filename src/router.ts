@@ -7,6 +7,10 @@ import { supabase } from "@src/lib/supabase";
 // Lazy load Chat to avoid circular dependency
 const Chat = () => import("@src/components/views/HomeView/Chat/Chat.vue");
 
+// Finder is a standalone side app, lazy loaded since most users won't visit it
+const FinderView = () => import("@src/components/views/FinderView/FinderView.vue");
+const AddFinderView = () => import("@src/components/views/AddFinderView/AddFinderView.vue");
+
 const routes = [
   {
     path: "/chat/",
@@ -39,6 +43,18 @@ const routes = [
     path: "/reset/",
     name: "Password Reset",
     component: PasswordResetView,
+  },
+  {
+    path: "/finder",
+    name: "Finder",
+    component: FinderView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/AddFinder",
+    name: "Add Finder",
+    component: AddFinderView,
+    meta: { requiresAuth: true },
   },
 ];
 

@@ -69,9 +69,6 @@ watch(typingUsers, scrollToBottom);
   <div
     ref="container"
     class="grow px-5 py-5 flex flex-col overflow-y-scroll scrollbar-hidden"
-    :style="store.settings.chatBackground
-      ? { backgroundImage: `url(${store.settings.chatBackground})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'local' }
-      : {}"
   >
     <div
       v-if="store.status !== 'loading' && activeConversation?.messages"

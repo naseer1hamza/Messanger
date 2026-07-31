@@ -116,3 +116,21 @@ export interface IEmoji {
   r?: string;
   v?: string[];
 }
+
+export interface IFinderItem {
+  id: string;
+  userId: string;
+  imageUrl: string;
+  title?: string;
+  country?: string;
+  drinking?: string;
+  smoking?: string;
+  gender?: string;
+  sexuality?: string;
+  ethnicity?: string;
+  eyeColor?: string;
+  hairColor?: string;
+  /** manually entered by the uploader, used by the "Nearby Users" filter */
+  distanceKm?: number;
+  createdAt: Date;
+}

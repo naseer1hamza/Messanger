@@ -176,49 +176,36 @@ const handleComposerKeydown = (event: KeyboardEvent) => {
     </p>
 
     <div
-      class="h-auto min-h-21 p-5 flex items-end"
+      class="h-auto min-h-21 px-5 py-4 flex items-end gap-3"
       v-if="store.status !== 'loading'"
       :class="recording ? ['justify-between'] : []"
     >
-      <div class="min-h-[2.75rem]">
-        <!--select attachments button-->
-        <IconButton
-          v-if="!recording"
-          class="ic-btn-ghost-primary w-7 h-7 md:mr-5 xs:mr-4"
-          title="open select attachments modal"
-          aria-label="open select attachments modal"
-          @click="openAttachmentsModal = true"
+      <!--select attachments button-->
+      <IconButton
+        v-if="!recording"
+        class="ic-btn-ghost-primary w-9 h-9 shrink-0 self-end"
+        title="open select attachments modal"
+        aria-label="open select attachments modal"
+        @click="openAttachmentsModal = true"
+      >
+        <PaperClipIcon class="w-[1.25rem] h-[1.25rem]" />
+      </IconButton>
+
+      <!--recording timer-->
+      <p v-if="recording" class="body-1 text-indigo-300 self-center">00:11</p>
+
+      <!--rounded message input pill-->
+      <div class="grow min-w-0" v-if="!recording">
+        <div
+          class="w-full flex items-end gap-1 rounded-full bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 focus-within:border-indigo-200 dark:focus-within:border-indigo-400 pl-2 pr-1.5 py-1.5 transition-colors duration-200"
         >
-          <PaperClipIcon class="w-[1.25rem] h-[1.25rem]" />
-        </IconButton>
-
-        <!--recording timer-->
-        <p v-if="recording" class="body-1 text-indigo-300">00:11</p>
-      </div>
-
-      <!--message textarea-->
-      <div class="grow md:mr-5 xs:mr-4 self-end" v-if="!recording">
-        <div class="relative">
-          <Textarea
-            class="max-h-[5rem] pr-12.5 resize-none scrollbar-hidden"
-            :value="value"
-            auto-resize
-            cols="30"
-            rows="1"
-            placeholder="Write your message here"
-            aria-label="Write your message here"
-            @update:model-value="onComposerInput"
-            @keydown="handleComposerKeydown"
-          />
-
-          <!--emojis-->
-          <div class="absolute bottom-[.8125rem] right-0">
-            <!--emoji button-->
+          <!--emoji button-->
+          <div class="relative shrink-0">
             <IconButton
               title="toggle emoji picker"
               aria-label="toggle emoji picker"
               @click="showPicker = !showPicker"
-              class="ic-btn-ghost-primary toggle-picker-button w-7 h-7 md:mr-5 xs:mr-4"
+              class="ic-btn-ghost-primary toggle-picker-button w-8 h-8"
             >
               <XCircleIcon v-if="showPicker" class="w-[1.25rem] h-[1.25rem]" />
               <FaceSmileIcon
@@ -232,7 +219,7 @@ const handleComposerKeydown = (event: KeyboardEvent) => {
               <div
                 v-click-outside="handleClickOutside"
                 v-show="showPicker"
-                class="absolute z-10 bottom-13.75 md:right-0 xs:right-[-5rem] mt-2"
+                class="absolute z-10 bottom-13.75 left-0 mt-2"
               >
                 <div role="none">
                   <EmojiPicker :show="showPicker" />
@@ -240,24 +227,34 @@ const handleComposerKeydown = (event: KeyboardEvent) => {
               </div>
             </ScaleTransition>
           </div>
+
+          <Textarea
+            class="!bg-transparent !border-none !ring-0 !shadow-none !rounded-none !h-8 !py-1 !px-0 max-h-[5rem] resize-none scrollbar-hidden self-center"
+            :value="value"
+            auto-resize
+            cols="30"
+            rows="1"
+            placeholder="Type a message"
+            aria-label="Type a message"
+            @update:model-value="onComposerInput"
+            @keydown="handleComposerKeydown"
+          />
         </div>
       </div>
 
-      <div class="min-h-[2.75rem]">
-        <!--cancel recording button-->
-        <div v-if="recording" @click="handleCancelRecording">
-          <Button class="ghost-danger ghost-text"> Cancel </Button>
-        </div>
+      <!--cancel recording button-->
+      <div v-if="recording" @click="handleCancelRecording" class="self-center">
+        <Button class="ghost-danger ghost-text"> Cancel </Button>
       </div>
 
-      <div class="min-h-[2.75rem] flex">
+      <div class="flex items-center gap-2 shrink-0 self-end">
         <!--finish recording button-->
         <IconButton
           v-if="recording"
           title="finish recording"
           aria-label="finish recording"
           @click="handleToggleRecording"
-          class="relative group w-7 h-7 flex justify-center items-center outline-none rounded-full bg-indigo-300 hover:bg-green-300 dark:hover:bg-green-400 dark:focus:bg-green-400 focus:outline-none transition-all duration-200"
+          class="relative group w-9 h-9 flex justify-center items-center outline-none rounded-full bg-indigo-300 hover:bg-green-300 dark:hover:bg-green-400 dark:focus:bg-green-400 focus:outline-none transition-all duration-200"
         >
           <span
             class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-300 group-hover:bg-green-300 opacity-40"
@@ -278,7 +275,7 @@ const handleComposerKeydown = (event: KeyboardEvent) => {
           @click="handleToggleRecording"
           title="start recording"
           aria-label="start recording"
-          class="ic-btn-ghost-primary w-7 h-7 md:mr-5 xs:mr-4"
+          class="ic-btn-ghost-primary w-9 h-9"
         >
           <MicrophoneIcon class="w-[1.25rem] h-[1.25rem]" />
         </IconButton>
@@ -286,7 +283,7 @@ const handleComposerKeydown = (event: KeyboardEvent) => {
         <!--send message button-->
         <IconButton
           v-if="!recording"
-          class="ic-btn-contained-primary w-7 h-7 active:scale-110"
+          class="ic-btn-contained-primary w-9 h-9 rounded-full active:scale-110"
           :class="{ 'opacity-50 pointer-events-none': sending }"
           title="send message"
           aria-label="send message"
