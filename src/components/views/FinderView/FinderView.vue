@@ -11,16 +11,25 @@ import {
 } from "@src/constants/finderFilters";
 import type { IFinderItem } from "@src/types";
 
-import { PlusIcon, XMarkIcon } from "@heroicons/vue/24/outline";
+import {
+  BellIcon,
+  ChatBubbleLeftRightIcon,
+  EnvelopeIcon,
+  MagnifyingGlassIcon,
+  PlusIcon,
+  UserCircleIcon,
+  XMarkIcon,
+} from "@heroicons/vue/24/outline";
 import Pagination from "@src/components/ui/navigation/Pagination.vue";
 
 const NAV_LINKS = ["Home", "Search", "Ad Page", "Inner Pages", "Contact", "Blog"];
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 40;
 
 const items = ref<IFinderItem[]>([]);
 const loadingItems = ref(true);
 const loadError = ref("");
 
+const searchQuery = ref("");
 const selectedFilters = ref<Record<string, string>>({});
 const maxDistance = ref(NEARBY_DISTANCE_MAX);
 const distanceFilterActive = computed(() => maxDistance.value < NEARBY_DISTANCE_MAX);
@@ -30,11 +39,15 @@ const currentPage = ref(1);
 const activeFilterCount = computed(
   () =>
     Object.values(selectedFilters.value).filter(Boolean).length +
-    (distanceFilterActive.value ? 1 : 0),
+    (distanceFilterActive.value ? 1 : 0) +
+    (searchQuery.value.trim() ? 1 : 0),
 );
 
 const filteredItems = computed(() =>
   items.value.filter((item) => {
+    const query = searchQuery.value.trim().toLowerCase();
+    if (query && !(item.title || "").toLowerCase().includes(query)) return false;
+
     const matchesSelects = FINDER_SELECT_FILTERS.every((filter) => {
       const selected = selectedFilters.value[filter.key];
       if (!selected) return true;
@@ -79,6 +92,7 @@ const handleFilterChange = (key: string, value: string) => {
 const clearFilters = () => {
   selectedFilters.value = {};
   maxDistance.value = NEARBY_DISTANCE_MAX;
+  searchQuery.value = "";
 };
 
 const scrollContainer = ref<HTMLElement | null>(null);
@@ -114,6 +128,7 @@ const loadItems = async () => {
       eyeColor: row.eye_color || undefined,
       hairColor: row.hair_color || undefined,
       distanceKm: row.distance_km ?? undefined,
+      linkUrl: row.link_url || undefined,
       createdAt: new Date(row.created_at),
     }));
   }
@@ -125,35 +140,107 @@ onMounted(loadItems);
 </script>
 
 <template>
-  <div ref="scrollContainer" class="w-full h-full overflow-y-auto bg-white dark:bg-gray-800 transition-colors duration-500">
-    <!--header + filters-->
-    <div class="sticky top-0 z-10 bg-black">
-      <div class="max-w-6xl mx-auto px-6">
-        <!--logo + nav links + app actions-->
-        <div class="flex flex-wrap items-center justify-between gap-4 py-4 border-b border-white/10">
-          <p class="text-xl font-bold tracking-tight whitespace-nowrap">
-            <span class="text-white">Sexy</span><span class="text-red-500">Singles</span>
-          </p>
+  <div ref="scrollContainer" class="w-full h-full overflow-y-auto" style="background-color: #e5e5e5">
+    <!--top banner-->
+    <div class="sticky top-0 z-10 bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center gap-4">
+        <p class="text-xl font-bold tracking-tight whitespace-nowrap">
+          <span class="text-gray-900">Need LOGO</span><span class="text-red-500">Here</span>
+        </p>
 
-          <nav class="flex flex-wrap items-center gap-5">
-            <a
-              v-for="link in NAV_LINKS"
-              :key="link"
-              href="#"
-              @click.prevent
-              class="text-sm text-gray-300 hover:text-white transition-colors duration-150"
-            >
-              {{ link }}
-            </a>
-          </nav>
+        <!--search-->
+        <div class="relative flex-1 min-w-[120px] max-w-[180px]">
+          <MagnifyingGlassIcon class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search"
+            v-model="searchQuery"
+            class="w-full h-9 pl-9 pr-3 rounded-full text-sm bg-gray-100 text-gray-700 outline-none focus:ring-2 focus:ring-red-200 transition-shadow duration-150"
+          />
         </div>
 
-        <!--filter bar-->
-        <div class="flex flex-wrap items-end gap-3 py-4">
+        <nav class="hidden lg:flex items-center gap-5">
+          <a
+            v-for="link in NAV_LINKS"
+            :key="link"
+            href="#"
+            @click.prevent
+            class="text-sm text-gray-500 hover:text-gray-900 transition-colors duration-150 whitespace-nowrap"
+          >
+            {{ link }}
+          </a>
+        </nav>
+
+        <div class="flex items-center gap-3 ml-auto">
+          <a
+            href="#"
+            @click.prevent
+            title="Messages"
+            aria-label="Messages"
+            class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-150"
+            style="color: #555555"
+          >
+            <EnvelopeIcon class="w-5 h-5" />
+          </a>
+          <a
+            href="#"
+            @click.prevent
+            title="Notifications"
+            aria-label="Notifications"
+            class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-150"
+            style="color: #555555"
+          >
+            <BellIcon class="w-5 h-5" />
+          </a>
+          <a
+            href="#"
+            @click.prevent
+            title="Profile"
+            aria-label="Profile"
+            class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-150"
+            style="color: #555555"
+          >
+            <UserCircleIcon class="w-5 h-5" />
+          </a>
+          <RouterLink
+            to="/chat/"
+            title="Back to Messenger"
+            aria-label="Back to Messenger"
+            class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-150"
+            style="color: #555555"
+          >
+            <ChatBubbleLeftRightIcon class="w-5 h-5" />
+          </RouterLink>
+          <RouterLink
+            to="/AddFinder"
+            title="Add Photo"
+            aria-label="Add Photo"
+            class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-150"
+            style="color: #555555"
+          >
+            <PlusIcon class="w-5 h-5" />
+          </RouterLink>
+        </div>
+      </div>
+    </div>
+
+    <!--body: filters sidebar + images-->
+    <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col lg:flex-row items-start gap-6">
+      <!--filters sidebar-->
+      <aside class="w-full lg:w-64 shrink-0">
+        <p
+          class="inline-block bg-white text-sm font-semibold px-4 py-2 rounded-md shadow-sm mb-4"
+          style="font-family: Tahoma, sans-serif; color: #555555"
+        >
+          Browse
+        </p>
+
+        <div class="flex flex-col gap-3">
           <select
             v-for="filter in FINDER_SELECT_FILTERS"
             :key="filter.key"
-            class="w-auto h-9 px-3 pr-8 rounded-sm text-sm bg-gray-800 border border-gray-700 text-gray-200 outline-none focus:border-red-500 transition-colors duration-150"
+            class="w-full h-10 px-3 pr-8 rounded-md text-sm shadow-sm outline-none focus:border-red-400 transition-colors duration-150"
+            style="font-family: Tahoma, sans-serif; color: #ffffff; background-color: #14213d; border: 1px solid #26365e"
             :value="selectedFilters[filter.key] || ''"
             @change="handleFilterChange(filter.key, ($event.target as HTMLSelectElement).value)"
           >
@@ -164,17 +251,24 @@ onMounted(loadItems);
           </select>
 
           <!--nearby users distance slider-->
-          <div class="flex flex-col justify-end min-w-[220px]">
-            <label for="nearby-distance" class="text-xs text-gray-400 mb-1">
+          <div
+            class="shadow-sm rounded-md px-3 py-2.5"
+            style="background-color: #14213d; border: 1px solid #26365e"
+          >
+            <label
+              for="nearby-distance"
+              class="text-xs block mb-1"
+              style="font-family: Tahoma, sans-serif; color: #ffffff"
+            >
               Nearby Users
-              <span class="text-gray-200 font-medium">
-                — within {{ maxDistance }} km
+              <span class="font-medium">
+                - within {{ maxDistance }} km
               </span>
             </label>
             <input
               id="nearby-distance"
               type="range"
-              class="accent-red-500 w-full h-9"
+              class="accent-red-500 w-full"
               :min="NEARBY_DISTANCE_MIN"
               :max="NEARBY_DISTANCE_MAX"
               :step="NEARBY_DISTANCE_STEP"
@@ -186,77 +280,83 @@ onMounted(loadItems);
             v-if="activeFilterCount > 0"
             type="button"
             @click="clearFilters"
-            class="flex items-center gap-1 text-sm text-red-400 hover:text-red-300 py-2"
+            class="flex items-center justify-center gap-1 text-sm text-red-500 hover:text-red-600 py-2"
+            style="font-family: Tahoma, sans-serif"
           >
             <XMarkIcon class="w-4 h-4" />
             Clear filters
           </button>
         </div>
-      </div>
-    </div>
+      </aside>
 
-    <!--grid-->
-    <div class="max-w-6xl mx-auto px-6 py-6">
-      <div v-if="loadingItems" class="body-3 text-black/40 dark:text-white/40 py-12 text-center">
-        Loading…
-      </div>
-
-      <div v-else-if="loadError" class="body-3 text-red-600 dark:text-red-300 py-12 text-center">
-        {{ loadError }}
-      </div>
-
-      <div
-        v-else-if="filteredItems.length === 0"
-        class="body-3 text-black/40 dark:text-white/40 py-12 text-center"
-      >
-        {{ items.length === 0 ? "Nothing has been added yet." : "No images match these filters." }}
-      </div>
-
-      <template v-else>
-      <p class="body-3 text-black/40 dark:text-white/40 mb-4">
-        Showing {{ paginatedItems.length }} of {{ filteredItems.length }}
-      </p>
-
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        <div
-          v-for="item in paginatedItems"
-          :key="item.id"
-          class="group relative rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700 cursor-pointer"
-          style="aspect-ratio: 3 / 4"
-        >
-          <img
-            :src="item.imageUrl"
-            :alt="item.title || 'Finder image'"
-            class="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
-            loading="lazy"
-          />
-
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 flex flex-col justify-end p-3"
-          >
-            <p v-if="item.title" class="text-white text-sm font-semibold truncate">
-              {{ item.title }}
-            </p>
-            <div v-if="badgesFor(item).length > 0" class="flex flex-wrap gap-1 mt-1">
-              <span
-                v-for="badge in badgesFor(item)"
-                :key="badge"
-                class="px-2 py-0.5 rounded-full bg-white/20 text-white text-[.65rem]"
-              >
-                {{ badge }}
-              </span>
-            </div>
-          </div>
+      <!--images-->
+      <main class="flex-1 w-full min-w-0">
+        <div v-if="loadingItems" class="body-3 text-black/40 py-12 text-center">
+          Loading…
         </div>
-      </div>
 
-      <Pagination
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        class="mt-8"
-        @page-changed="handlePageChanged"
-      />
-      </template>
+        <div v-else-if="loadError" class="body-3 text-red-600 py-12 text-center">
+          {{ loadError }}
+        </div>
+
+        <div
+          v-else-if="filteredItems.length === 0"
+          class="body-3 text-black/40 py-12 text-center"
+        >
+          {{ items.length === 0 ? "Nothing has been added yet." : "No images match these filters." }}
+        </div>
+
+        <template v-else>
+        <p class="body-3 text-black/40 mb-4">
+          Showing {{ paginatedItems.length }} of {{ filteredItems.length }}
+        </p>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <component
+            :is="item.linkUrl ? 'a' : 'div'"
+            v-for="item in paginatedItems"
+            :key="item.id"
+            :href="item.linkUrl"
+            :target="item.linkUrl ? '_blank' : undefined"
+            :rel="item.linkUrl ? 'noopener noreferrer' : undefined"
+            class="group relative rounded-lg overflow-hidden bg-gray-50 block"
+            :class="item.linkUrl ? 'cursor-pointer' : 'cursor-default'"
+            style="aspect-ratio: 3 / 4"
+          >
+            <img
+              :src="item.imageUrl"
+              :alt="item.title || 'Finder image'"
+              class="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
+              loading="lazy"
+            />
+
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 flex flex-col justify-end p-3"
+            >
+              <p v-if="item.title" class="text-white text-sm font-semibold truncate">
+                {{ item.title }}
+              </p>
+              <div v-if="badgesFor(item).length > 0" class="flex flex-wrap gap-1 mt-1">
+                <span
+                  v-for="badge in badgesFor(item)"
+                  :key="badge"
+                  class="px-2 py-0.5 rounded-full bg-white/20 text-white text-[.65rem]"
+                >
+                  {{ badge }}
+                </span>
+              </div>
+            </div>
+          </component>
+        </div>
+
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          class="mt-8"
+          @page-changed="handlePageChanged"
+        />
+        </template>
+      </main>
     </div>
   </div>
 </template>

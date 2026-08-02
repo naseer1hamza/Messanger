@@ -132,5 +132,7 @@ export interface IFinderItem {
   hairColor?: string;
   /** manually entered by the uploader, used by the "Nearby Users" filter */
   distanceKm?: number;
+  /** when set, clicking the image on /finder opens this link */
+  linkUrl?: string;
   createdAt: Date;
 }

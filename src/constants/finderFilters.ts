@@ -43,12 +43,12 @@ export const FINDER_SELECT_FILTERS: IFinderSelectFilter[] = [
   { key: "country", label: "Country", options: COUNTRIES },
   {
     key: "drinking",
-    label: "Drinking",
+    label: "Fetish",
     options: ["Never", "Socially", "Regularly", "Prefer not to say"],
   },
   {
     key: "smoking",
-    label: "Smoking",
+    label: "Hard limits",
     options: ["Never", "Occasionally", "Regularly", "Trying to quit", "Prefer not to say"],
   },
   {

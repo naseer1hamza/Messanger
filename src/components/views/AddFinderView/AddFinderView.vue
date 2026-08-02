@@ -7,7 +7,7 @@ import { supabase } from "@src/lib/supabase";
 import { FINDER_SELECT_FILTERS, FINDER_COLUMN_BY_KEY } from "@src/constants/finderFilters";
 import type { IFinderItem } from "@src/types";
 
-import { ArrowLeftIcon, TrashIcon } from "@heroicons/vue/24/outline";
+import { ArrowLeftIcon, LinkIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import Button from "@src/components/ui/inputs/Button.vue";
 import DropFileUpload from "@src/components/ui/inputs/DropFileUpload.vue";
 import LabeledTextInput from "@src/components/ui/inputs/LabeledTextInput.vue";
@@ -28,7 +28,16 @@ watch(imageFile, (file) => {
 
 const title = ref("");
 const distanceKm = ref("");
+const linkUrl = ref("");
 const selections = reactive<Record<string, string>>({});
+
+// prepend https:// if the user typed a bare domain, so the saved link is
+// always clickable as an absolute URL.
+const normalizeUrl = (value: string): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
 
 const uploading = ref(false);
 const uploadError = ref("");
@@ -79,6 +88,7 @@ const loadMyItems = async () => {
       eyeColor: row.eye_color || undefined,
       hairColor: row.hair_color || undefined,
       distanceKm: row.distance_km ?? undefined,
+      linkUrl: row.link_url || undefined,
       createdAt: new Date(row.created_at),
     }));
   }
@@ -90,6 +100,7 @@ const resetForm = () => {
   imageFile.value = undefined;
   title.value = "";
   distanceKm.value = "";
+  linkUrl.value = "";
   for (const key of Object.keys(selections)) delete selections[key];
 };
 
@@ -118,6 +129,7 @@ const handleUpload = async () => {
       image_url: urlData.publicUrl,
       title: title.value.trim() || null,
       distance_km: distanceKm.value.trim() ? Number(distanceKm.value) : null,
+      link_url: normalizeUrl(linkUrl.value),
     };
 
     for (const filter of FINDER_SELECT_FILTERS) {
@@ -255,6 +267,20 @@ onUnmounted(() => {
                 @value-changed="(value) => (distanceKm = value)"
               />
             </div>
+
+            <div class="mt-4">
+              <LabeledTextInput
+                id="finder-link"
+                type="url"
+                label="URL Link (optional)"
+                placeholder="https://example.com"
+                :value="linkUrl"
+                @value-changed="(value) => (linkUrl = value)"
+              />
+              <p class="body-3 text-black/40 dark:text-white/40 mt-1">
+                Clicking the image on Finder will open this link.
+              </p>
+            </div>
           </div>
 
           <!--static filter fields-->
@@ -322,6 +348,12 @@ onUnmounted(() => {
               :src="item.imageUrl"
               :alt="item.title || 'Uploaded image'"
               class="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-110"
+            />
+
+            <LinkIcon
+              v-if="item.linkUrl"
+              class="absolute top-2 left-2 w-4 h-4 text-white drop-shadow"
+              title="Links out on click"
             />
 
             <div
