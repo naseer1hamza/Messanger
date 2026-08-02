@@ -136,3 +136,11 @@ export interface IFinderItem {
   linkUrl?: string;
   createdAt: Date;
 }
+
+export interface ILiaItem {
+  id: string;
+  userId: string;
+  imageUrl: string;
+  title?: string;
+  createdAt: Date;
+}

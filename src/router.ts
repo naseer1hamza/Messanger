@@ -11,6 +11,10 @@ const Chat = () => import("@src/components/views/HomeView/Chat/Chat.vue");
 const FinderView = () => import("@src/components/views/FinderView/FinderView.vue");
 const AddFinderView = () => import("@src/components/views/AddFinderView/AddFinderView.vue");
 
+// Lia is a standalone portfolio/gallery page, lazy loaded since most users won't visit it
+const LiaView = () => import("@src/components/views/LiaView/LiaView.vue");
+const AddLiaView = () => import("@src/components/views/AddLiaView/AddLiaView.vue");
+
 const routes = [
   {
     path: "/chat/",
@@ -54,6 +58,18 @@ const routes = [
     path: "/AddFinder",
     name: "Add Finder",
     component: AddFinderView,
+    meta: { requiresAuth: true },
+  },
+  {
+    // public portfolio gallery - anyone can view, no login required
+    path: "/Lia",
+    name: "Lia",
+    component: LiaView,
+  },
+  {
+    path: "/AddLia",
+    name: "Add Lia",
+    component: AddLiaView,
     meta: { requiresAuth: true },
   },
 ];

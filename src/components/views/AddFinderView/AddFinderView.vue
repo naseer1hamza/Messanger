@@ -4,6 +4,7 @@ import { RouterLink } from "vue-router";
 
 import useStore from "@src/store/store";
 import { supabase } from "@src/lib/supabase";
+import { ensureWebSafeImage } from "@src/lib/webSafeImage";
 import { FINDER_SELECT_FILTERS, FINDER_COLUMN_BY_KEY } from "@src/constants/finderFilters";
 import type { IFinderItem } from "@src/types";
 
@@ -40,8 +41,29 @@ const normalizeUrl = (value: string): string | null => {
 };
 
 const uploading = ref(false);
+const converting = ref(false);
 const uploadError = ref("");
 const uploadSuccess = ref("");
+
+// TIFF files aren't renderable in <img> tags, so convert them to PNG
+// before they're previewed or uploaded.
+const handleFileSelected = async (file: File | undefined) => {
+  if (!file) {
+    imageFile.value = undefined;
+    return;
+  }
+
+  uploadError.value = "";
+  converting.value = true;
+  try {
+    imageFile.value = await ensureWebSafeImage(file);
+  } catch (err: any) {
+    uploadError.value = err.message || "This image format isn't supported.";
+    imageFile.value = undefined;
+  } finally {
+    converting.value = false;
+  }
+};
 
 // ---- "your uploads" state ----
 const myItems = ref<IFinderItem[]>([]);
@@ -190,7 +212,9 @@ const handleMyItemsPageChanged = (page: number) => {
   myItemsPage.value = page;
 };
 
-const canUpload = computed(() => !!imageFile.value && !uploading.value);
+const canUpload = computed(
+  () => !!imageFile.value && !uploading.value && !converting.value,
+);
 
 onMounted(loadMyItems);
 
@@ -230,10 +254,14 @@ onUnmounted(() => {
             <DropFileUpload
               id="finder-image-upload"
               label="Image"
-              accept="image/*"
+              accept="image/*,.tif,.tiff"
               :value="imageFile"
-              @value-changed="(value) => (imageFile = value)"
+              @value-changed="handleFileSelected"
             />
+
+            <p v-if="converting" class="mt-2 body-3 text-black/40 dark:text-white/40">
+              Converting image…
+            </p>
 
             <div
               v-if="imagePreviewUrl"
