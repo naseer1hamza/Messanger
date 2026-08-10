@@ -91,13 +91,14 @@ const handleHeaderFileSelected = async (file: File | undefined) => {
 const loadHeaderSettings = async () => {
   const { data } = await supabase
     .from("lia_settings")
-    .select("header_image_url, background_color, footer_image_url")
+    .select("header_image_url, background_color, footer_image_url, footer_image_2_url")
     .eq("id", 1)
     .maybeSingle();
   currentHeaderImageUrl.value = (data as any)?.header_image_url || undefined;
   currentBackgroundColor.value = (data as any)?.background_color || undefined;
   backgroundColorInput.value = currentBackgroundColor.value || "";
   currentFooterImageUrl.value = (data as any)?.footer_image_url || undefined;
+  currentFooterImage2Url.value = (data as any)?.footer_image_2_url || undefined;
 };
 
 const canUploadHeader = computed(
@@ -342,6 +343,109 @@ const handleRemoveFooter = async () => {
     currentFooterImageUrl.value = undefined;
   } catch (err: any) {
     footerError.value = err.message || "Failed to remove footer image";
+  }
+};
+
+// ---- footer image 2 state (shown at the bottom, under the videos on /Lia) ----
+const currentFooterImage2Url = ref<string | undefined>(undefined);
+const footerImage2File = ref<File | undefined>(undefined);
+const footerImage2PreviewUrl = ref("");
+
+watch(footerImage2File, (file) => {
+  if (footerImage2PreviewUrl.value) URL.revokeObjectURL(footerImage2PreviewUrl.value);
+  footerImage2PreviewUrl.value = file ? URL.createObjectURL(file) : "";
+});
+
+const footer2Converting = ref(false);
+const footer2Uploading = ref(false);
+const footer2Error = ref("");
+const footer2Success = ref("");
+
+const handleFooter2FileSelected = async (file: File | undefined) => {
+  if (!file) {
+    footerImage2File.value = undefined;
+    return;
+  }
+
+  footer2Error.value = "";
+  footer2Converting.value = true;
+  try {
+    footerImage2File.value = await ensureWebSafeImage(file);
+  } catch (err: any) {
+    footer2Error.value = err.message || "This image format isn't supported.";
+    footerImage2File.value = undefined;
+  } finally {
+    footer2Converting.value = false;
+  }
+};
+
+const canUploadFooter2 = computed(
+  () => !!footerImage2File.value && !footer2Uploading.value && !footer2Converting.value,
+);
+
+const handleFooter2Upload = async () => {
+  if (!store.authUser || !footerImage2File.value) return;
+
+  footer2Error.value = "";
+  footer2Success.value = "";
+  footer2Uploading.value = true;
+
+  try {
+    const fileExt = footerImage2File.value.name.split(".").pop();
+    const filePath = `${store.authUser.id}/footer2-${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+    const { error: storageError } = await supabase.storage
+      .from("lia-images")
+      .upload(filePath, footerImage2File.value);
+    if (storageError) throw storageError;
+
+    const { data: urlData } = supabase.storage.from("lia-images").getPublicUrl(filePath);
+
+    const { error: upsertError } = await supabase.from("lia_settings").upsert(
+      {
+        id: 1,
+        footer_image_2_url: urlData.publicUrl,
+        updated_by: store.authUser.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    if (upsertError) throw upsertError;
+
+    currentFooterImage2Url.value = urlData.publicUrl;
+    footerImage2File.value = undefined;
+    footer2Success.value = "Footer image updated!";
+
+    setTimeout(() => {
+      footer2Success.value = "";
+    }, 3000);
+  } catch (err: any) {
+    footer2Error.value = err.message || "Failed to update footer image";
+  } finally {
+    footer2Uploading.value = false;
+  }
+};
+
+const handleRemoveFooter2 = async () => {
+  if (!store.authUser || !confirm("Remove the footer image?")) return;
+
+  footer2Error.value = "";
+
+  try {
+    const { error } = await supabase.from("lia_settings").upsert(
+      {
+        id: 1,
+        footer_image_2_url: null,
+        updated_by: store.authUser.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    if (error) throw error;
+
+    currentFooterImage2Url.value = undefined;
+  } catch (err: any) {
+    footer2Error.value = err.message || "Failed to remove footer image";
   }
 };
 
@@ -617,7 +721,7 @@ onUnmounted(() => {
       <div class="rounded-lg border border-gray-100 dark:border-gray-700 p-6 mb-6">
         <p class="heading-2 text-black/70 dark:text-white/70 mb-1">Footer image</p>
         <p class="body-3 text-black/50 dark:text-white/50 mb-4">
-          Optional photo shown below the videos on the Lia page.
+          Optional photo shown above the videos on the Lia page.
         </p>
 
         <div
@@ -672,6 +776,71 @@ onUnmounted(() => {
             v-if="currentFooterImageUrl"
             class="outlined-danger outlined-text py-3 px-5"
             @click="handleRemoveFooter"
+          >
+            Remove
+          </Button>
+        </div>
+      </div>
+
+      <!--footer image 2-->
+      <div class="rounded-lg border border-gray-100 dark:border-gray-700 p-6 mb-6">
+        <p class="heading-2 text-black/70 dark:text-white/70 mb-1">Footer image 2</p>
+        <p class="body-3 text-black/50 dark:text-white/50 mb-4">
+          Optional photo shown at the very bottom, under the videos on the Lia page.
+        </p>
+
+        <div
+          v-if="currentFooterImage2Url && !footerImage2PreviewUrl"
+          class="mb-4 rounded-lg overflow-hidden bg-gray-50"
+        >
+          <img
+            :src="currentFooterImage2Url"
+            alt="Current footer image 2"
+            class="w-full h-auto object-cover"
+          />
+        </div>
+
+        <DropFileUpload
+          id="lia-footer2-upload"
+          label="Image"
+          accept="image/*,.tif,.tiff"
+          :value="footerImage2File"
+          @value-changed="handleFooter2FileSelected"
+        />
+
+        <p v-if="footer2Converting" class="mt-2 body-3 text-black/40 dark:text-white/40">
+          Converting image…
+        </p>
+
+        <div v-if="footerImage2PreviewUrl" class="mt-3 rounded-lg overflow-hidden bg-gray-50">
+          <img
+            :src="footerImage2PreviewUrl"
+            alt="Selected footer image 2 preview"
+            class="w-full h-auto object-cover"
+          />
+        </div>
+
+        <p v-if="footer2Success" class="mt-4 body-3 text-green-600 dark:text-green-300">
+          {{ footer2Success }}
+        </p>
+        <p v-if="footer2Error" class="mt-4 body-3 text-red-600 dark:text-red-300">
+          {{ footer2Error }}
+        </p>
+
+        <div class="flex gap-3 mt-5">
+          <Button
+            class="contained-primary contained-text flex-1 py-3"
+            :disabled="!canUploadFooter2"
+            :class="{ 'opacity-50 pointer-events-none': !canUploadFooter2 }"
+            :loading="footer2Uploading"
+            @click="handleFooter2Upload"
+          >
+            Save image
+          </Button>
+          <Button
+            v-if="currentFooterImage2Url"
+            class="outlined-danger outlined-text py-3 px-5"
+            @click="handleRemoveFooter2"
           >
             Remove
           </Button>

@@ -21,16 +21,18 @@ const loadError = ref("");
 
 const headerImageUrl = ref<string | undefined>(undefined);
 const footerImageUrl = ref<string | undefined>(undefined);
+const footerImage2Url = ref<string | undefined>(undefined);
 const backgroundColor = ref(DEFAULT_BACKGROUND_COLOR);
 
 const loadHeaderSettings = async () => {
   const { data } = await supabase
     .from("lia_settings")
-    .select("header_image_url, background_color, footer_image_url")
+    .select("header_image_url, background_color, footer_image_url, footer_image_2_url")
     .eq("id", 1)
     .maybeSingle();
   headerImageUrl.value = (data as any)?.header_image_url || undefined;
   footerImageUrl.value = (data as any)?.footer_image_url || undefined;
+  footerImage2Url.value = (data as any)?.footer_image_2_url || undefined;
   backgroundColor.value = (data as any)?.background_color || DEFAULT_BACKGROUND_COLOR;
 };
 
@@ -345,15 +347,8 @@ onUnmounted(() => {
           @page-changed="handlePageChanged"
         />
 
-        <!--footer image-->
-        <div v-if="footerImageUrl" class="mt-10 px-4 max-w-2xl mx-auto">
-          <div class="rounded-md overflow-hidden bg-gray-50">
-            <img :src="footerImageUrl" alt="" class="w-full h-auto object-cover" loading="lazy" />
-          </div>
-        </div>
-
         <!--featured video-->
-        <div class="mt-6 px-4 max-w-2xl mx-auto" :class="{ 'mt-10': !footerImageUrl }">
+        <div class="mt-10 px-4 max-w-2xl mx-auto">
           <div class="rounded-md overflow-hidden bg-gray-50" style="aspect-ratio: 16 / 9">
             <iframe
               class="w-full h-full"
@@ -364,6 +359,13 @@ onUnmounted(() => {
               referrerpolicy="strict-origin-when-cross-origin"
               allowfullscreen
             ></iframe>
+          </div>
+        </div>
+
+        <!--footer image-->
+        <div v-if="footerImageUrl" class="mt-6 px-4 max-w-2xl mx-auto">
+          <div class="rounded-md overflow-hidden bg-gray-50">
+            <img :src="footerImageUrl" alt="" class="w-full h-auto object-cover" loading="lazy" />
           </div>
         </div>
 
@@ -379,6 +381,13 @@ onUnmounted(() => {
               referrerpolicy="strict-origin-when-cross-origin"
               allowfullscreen
             ></iframe>
+          </div>
+        </div>
+
+        <!--footer image 2-->
+        <div v-if="footerImage2Url" class="mt-6 px-4 max-w-2xl mx-auto">
+          <div class="rounded-md overflow-hidden bg-gray-50">
+            <img :src="footerImage2Url" alt="" class="w-full h-auto object-cover" loading="lazy" />
           </div>
         </div>
       </template>
