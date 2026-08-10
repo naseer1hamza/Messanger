@@ -11,6 +11,8 @@ import {
 } from "@src/constants/finderFilters";
 import type { IFinderItem } from "@src/types";
 
+import headerImage from "@src/assets/images/header.jpeg";
+
 import {
   BellIcon,
   ChatBubbleLeftRightIcon,
@@ -141,8 +143,11 @@ onMounted(loadItems);
 
 <template>
   <div ref="scrollContainer" class="w-full h-full overflow-y-auto" style="background-color: #e5e5e5">
+    <!--decorative header image strip, scrolls away with the page-->
+    <img :src="headerImage" alt="" class="w-full h-auto block" />
+
     <!--top banner-->
-    <div class="sticky top-0 z-10 bg-white border-b border-gray-200">
+    <div v-if="false" class="sticky top-0 z-10 bg-white border-b border-gray-200">
       <div class="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center gap-4">
         <p class="text-xl font-bold tracking-tight whitespace-nowrap">
           <span class="text-gray-900">Need LOGO</span><span class="text-red-500">Here</span>
@@ -240,7 +245,7 @@ onMounted(loadItems);
             v-for="filter in FINDER_SELECT_FILTERS"
             :key="filter.key"
             class="w-full h-10 px-3 pr-8 rounded-md text-sm shadow-sm outline-none focus:border-red-400 transition-colors duration-150"
-            style="font-family: Tahoma, sans-serif; color: #ffffff; background-color: #14213d; border: 1px solid #26365e"
+            style="font-family: Tahoma, sans-serif; color: #555555; background-color: #ffffff; border: 1px solid #d5d5d5"
             :value="selectedFilters[filter.key] || ''"
             @change="handleFilterChange(filter.key, ($event.target as HTMLSelectElement).value)"
           >
@@ -253,12 +258,12 @@ onMounted(loadItems);
           <!--nearby users distance slider-->
           <div
             class="shadow-sm rounded-md px-3 py-2.5"
-            style="background-color: #14213d; border: 1px solid #26365e"
+            style="background-color: #ffffff; border: 1px solid #d5d5d5"
           >
             <label
               for="nearby-distance"
               class="text-xs block mb-1"
-              style="font-family: Tahoma, sans-serif; color: #ffffff"
+              style="font-family: Tahoma, sans-serif; color: #555555"
             >
               Nearby Users
               <span class="font-medium">

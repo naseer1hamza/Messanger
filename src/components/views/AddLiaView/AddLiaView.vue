@@ -14,6 +14,8 @@ import LabeledTextInput from "@src/components/ui/inputs/LabeledTextInput.vue";
 import Pagination from "@src/components/ui/navigation/Pagination.vue";
 
 const MY_ITEMS_PAGE_SIZE = 8;
+const DEFAULT_BACKGROUND_COLOR = "#fce0c8";
+const HEX_COLOR_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 const store = useStore();
 
@@ -89,10 +91,13 @@ const handleHeaderFileSelected = async (file: File | undefined) => {
 const loadHeaderSettings = async () => {
   const { data } = await supabase
     .from("lia_settings")
-    .select("header_image_url")
+    .select("header_image_url, background_color, footer_image_url")
     .eq("id", 1)
     .maybeSingle();
   currentHeaderImageUrl.value = (data as any)?.header_image_url || undefined;
+  currentBackgroundColor.value = (data as any)?.background_color || undefined;
+  backgroundColorInput.value = currentBackgroundColor.value || "";
+  currentFooterImageUrl.value = (data as any)?.footer_image_url || undefined;
 };
 
 const canUploadHeader = computed(
@@ -162,6 +167,181 @@ const handleRemoveHeader = async () => {
     currentHeaderImageUrl.value = undefined;
   } catch (err: any) {
     headerError.value = err.message || "Failed to remove header background";
+  }
+};
+
+// ---- background color state ----
+const currentBackgroundColor = ref<string | undefined>(undefined);
+const backgroundColorInput = ref("");
+const savingBackgroundColor = ref(false);
+const backgroundColorError = ref("");
+const backgroundColorSuccess = ref("");
+
+const isValidHexColor = computed(() => HEX_COLOR_PATTERN.test(backgroundColorInput.value.trim()));
+const canSaveBackgroundColor = computed(() => isValidHexColor.value && !savingBackgroundColor.value);
+
+const handleSaveBackgroundColor = async () => {
+  if (!store.authUser) return;
+
+  const value = backgroundColorInput.value.trim();
+  if (!HEX_COLOR_PATTERN.test(value)) {
+    backgroundColorError.value = "Enter a valid hex color, e.g. #fce0c8";
+    return;
+  }
+
+  backgroundColorError.value = "";
+  backgroundColorSuccess.value = "";
+  savingBackgroundColor.value = true;
+
+  try {
+    const { error } = await supabase.from("lia_settings").upsert(
+      {
+        id: 1,
+        background_color: value,
+        updated_by: store.authUser.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    if (error) throw error;
+
+    currentBackgroundColor.value = value;
+    backgroundColorSuccess.value = "Background color updated!";
+
+    setTimeout(() => {
+      backgroundColorSuccess.value = "";
+    }, 3000);
+  } catch (err: any) {
+    backgroundColorError.value = err.message || "Failed to update background color";
+  } finally {
+    savingBackgroundColor.value = false;
+  }
+};
+
+const handleResetBackgroundColor = async () => {
+  if (!store.authUser || !confirm("Reset to the default background color?")) return;
+
+  backgroundColorError.value = "";
+
+  try {
+    const { error } = await supabase.from("lia_settings").upsert(
+      {
+        id: 1,
+        background_color: null,
+        updated_by: store.authUser.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    if (error) throw error;
+
+    currentBackgroundColor.value = undefined;
+    backgroundColorInput.value = "";
+  } catch (err: any) {
+    backgroundColorError.value = err.message || "Failed to reset background color";
+  }
+};
+
+// ---- footer image state (shown under the videos on /Lia) ----
+const currentFooterImageUrl = ref<string | undefined>(undefined);
+const footerImageFile = ref<File | undefined>(undefined);
+const footerImagePreviewUrl = ref("");
+
+watch(footerImageFile, (file) => {
+  if (footerImagePreviewUrl.value) URL.revokeObjectURL(footerImagePreviewUrl.value);
+  footerImagePreviewUrl.value = file ? URL.createObjectURL(file) : "";
+});
+
+const footerConverting = ref(false);
+const footerUploading = ref(false);
+const footerError = ref("");
+const footerSuccess = ref("");
+
+const handleFooterFileSelected = async (file: File | undefined) => {
+  if (!file) {
+    footerImageFile.value = undefined;
+    return;
+  }
+
+  footerError.value = "";
+  footerConverting.value = true;
+  try {
+    footerImageFile.value = await ensureWebSafeImage(file);
+  } catch (err: any) {
+    footerError.value = err.message || "This image format isn't supported.";
+    footerImageFile.value = undefined;
+  } finally {
+    footerConverting.value = false;
+  }
+};
+
+const canUploadFooter = computed(
+  () => !!footerImageFile.value && !footerUploading.value && !footerConverting.value,
+);
+
+const handleFooterUpload = async () => {
+  if (!store.authUser || !footerImageFile.value) return;
+
+  footerError.value = "";
+  footerSuccess.value = "";
+  footerUploading.value = true;
+
+  try {
+    const fileExt = footerImageFile.value.name.split(".").pop();
+    const filePath = `${store.authUser.id}/footer-${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+    const { error: storageError } = await supabase.storage
+      .from("lia-images")
+      .upload(filePath, footerImageFile.value);
+    if (storageError) throw storageError;
+
+    const { data: urlData } = supabase.storage.from("lia-images").getPublicUrl(filePath);
+
+    const { error: upsertError } = await supabase.from("lia_settings").upsert(
+      {
+        id: 1,
+        footer_image_url: urlData.publicUrl,
+        updated_by: store.authUser.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    if (upsertError) throw upsertError;
+
+    currentFooterImageUrl.value = urlData.publicUrl;
+    footerImageFile.value = undefined;
+    footerSuccess.value = "Footer image updated!";
+
+    setTimeout(() => {
+      footerSuccess.value = "";
+    }, 3000);
+  } catch (err: any) {
+    footerError.value = err.message || "Failed to update footer image";
+  } finally {
+    footerUploading.value = false;
+  }
+};
+
+const handleRemoveFooter = async () => {
+  if (!store.authUser || !confirm("Remove the footer image?")) return;
+
+  footerError.value = "";
+
+  try {
+    const { error } = await supabase.from("lia_settings").upsert(
+      {
+        id: 1,
+        footer_image_url: null,
+        updated_by: store.authUser.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+    if (error) throw error;
+
+    currentFooterImageUrl.value = undefined;
+  } catch (err: any) {
+    footerError.value = err.message || "Failed to remove footer image";
   }
 };
 
@@ -378,6 +558,120 @@ onUnmounted(() => {
             v-if="currentHeaderImageUrl"
             class="outlined-danger outlined-text py-3 px-5"
             @click="handleRemoveHeader"
+          >
+            Remove
+          </Button>
+        </div>
+      </div>
+
+      <!--background color-->
+      <div class="rounded-lg border border-gray-100 dark:border-gray-700 p-6 mb-6">
+        <p class="heading-2 text-black/70 dark:text-white/70 mb-1">Background color</p>
+        <p class="body-3 text-black/50 dark:text-white/50 mb-4">
+          Hex code used for the Lia page background. Defaults to {{ DEFAULT_BACKGROUND_COLOR }}.
+        </p>
+
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-md border border-gray-200 dark:border-gray-600 shrink-0"
+            :style="{ backgroundColor: isValidHexColor ? backgroundColorInput : (currentBackgroundColor || DEFAULT_BACKGROUND_COLOR) }"
+          ></div>
+          <div class="flex-1">
+            <LabeledTextInput
+              id="lia-background-color"
+              placeholder="#fce0c8"
+              :value="backgroundColorInput"
+              @value-changed="(value) => (backgroundColorInput = value)"
+            />
+          </div>
+        </div>
+
+        <p v-if="backgroundColorSuccess" class="mt-4 body-3 text-green-600 dark:text-green-300">
+          {{ backgroundColorSuccess }}
+        </p>
+        <p v-if="backgroundColorError" class="mt-4 body-3 text-red-600 dark:text-red-300">
+          {{ backgroundColorError }}
+        </p>
+
+        <div class="flex gap-3 mt-5">
+          <Button
+            class="contained-primary contained-text flex-1 py-3"
+            :disabled="!canSaveBackgroundColor"
+            :class="{ 'opacity-50 pointer-events-none': !canSaveBackgroundColor }"
+            :loading="savingBackgroundColor"
+            @click="handleSaveBackgroundColor"
+          >
+            Save color
+          </Button>
+          <Button
+            v-if="currentBackgroundColor"
+            class="outlined-danger outlined-text py-3 px-5"
+            @click="handleResetBackgroundColor"
+          >
+            Reset
+          </Button>
+        </div>
+      </div>
+
+      <!--footer image-->
+      <div class="rounded-lg border border-gray-100 dark:border-gray-700 p-6 mb-6">
+        <p class="heading-2 text-black/70 dark:text-white/70 mb-1">Footer image</p>
+        <p class="body-3 text-black/50 dark:text-white/50 mb-4">
+          Optional photo shown below the videos on the Lia page.
+        </p>
+
+        <div
+          v-if="currentFooterImageUrl && !footerImagePreviewUrl"
+          class="mb-4 rounded-lg overflow-hidden bg-gray-50"
+        >
+          <img
+            :src="currentFooterImageUrl"
+            alt="Current footer image"
+            class="w-full h-auto object-cover"
+          />
+        </div>
+
+        <DropFileUpload
+          id="lia-footer-upload"
+          label="Image"
+          accept="image/*,.tif,.tiff"
+          :value="footerImageFile"
+          @value-changed="handleFooterFileSelected"
+        />
+
+        <p v-if="footerConverting" class="mt-2 body-3 text-black/40 dark:text-white/40">
+          Converting image…
+        </p>
+
+        <div v-if="footerImagePreviewUrl" class="mt-3 rounded-lg overflow-hidden bg-gray-50">
+          <img
+            :src="footerImagePreviewUrl"
+            alt="Selected footer image preview"
+            class="w-full h-auto object-cover"
+          />
+        </div>
+
+        <p v-if="footerSuccess" class="mt-4 body-3 text-green-600 dark:text-green-300">
+          {{ footerSuccess }}
+        </p>
+        <p v-if="footerError" class="mt-4 body-3 text-red-600 dark:text-red-300">
+          {{ footerError }}
+        </p>
+
+        <div class="flex gap-3 mt-5">
+          <Button
+            class="contained-primary contained-text flex-1 py-3"
+            :disabled="!canUploadFooter"
+            :class="{ 'opacity-50 pointer-events-none': !canUploadFooter }"
+            :loading="footerUploading"
+            @click="handleFooterUpload"
+          >
+            Save image
+          </Button>
+          <Button
+            v-if="currentFooterImageUrl"
+            class="outlined-danger outlined-text py-3 px-5"
+            @click="handleRemoveFooter"
           >
             Remove
           </Button>

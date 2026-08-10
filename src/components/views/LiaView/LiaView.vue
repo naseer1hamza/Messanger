@@ -10,6 +10,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/vue/24/solid";
 import Pagination from "@src/components/ui/navigation/Pagination.vue";
 
 const ACCENT = "#a567f2";
+const DEFAULT_BACKGROUND_COLOR = "#fce0c8";
 const PAGE_SIZE = 12;
 // minimum horizontal drag distance (px) before a swipe counts as prev/next
 const SWIPE_THRESHOLD = 50;
@@ -19,14 +20,18 @@ const loadingItems = ref(true);
 const loadError = ref("");
 
 const headerImageUrl = ref<string | undefined>(undefined);
+const footerImageUrl = ref<string | undefined>(undefined);
+const backgroundColor = ref(DEFAULT_BACKGROUND_COLOR);
 
 const loadHeaderSettings = async () => {
   const { data } = await supabase
     .from("lia_settings")
-    .select("header_image_url")
+    .select("header_image_url, background_color, footer_image_url")
     .eq("id", 1)
     .maybeSingle();
   headerImageUrl.value = (data as any)?.header_image_url || undefined;
+  footerImageUrl.value = (data as any)?.footer_image_url || undefined;
+  backgroundColor.value = (data as any)?.background_color || DEFAULT_BACKGROUND_COLOR;
 };
 
 const currentPage = ref(1);
@@ -217,11 +222,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="scrollContainer" class="w-full h-full overflow-y-auto bg-white" style="font-family: Arimo, sans-serif">
+  <div
+    ref="scrollContainer"
+    class="w-full h-full overflow-y-auto"
+    :style="{ fontFamily: 'Arimo, sans-serif', backgroundColor: backgroundColor }"
+  >
     <!--header: scrolls away with the page (not sticky) so the full background photo can be seen-->
     <div
-      class="relative bg-white border-b border-gray-100 overflow-hidden"
+      class="relative border-b border-gray-100 overflow-hidden"
       :class="headerImageUrl ? 'min-h-[280px] sm:min-h-[320px]' : ''"
+      :style="{ backgroundColor: backgroundColor }"
     >
       <img
         v-if="headerImageUrl"
@@ -229,7 +239,7 @@ onUnmounted(() => {
         alt=""
         class="absolute inset-0 w-full h-full object-cover"
       />
-      <div v-if="headerImageUrl" class="absolute inset-0 bg-white/75"></div>
+      <div v-if="headerImageUrl" class="absolute inset-0" :style="{ backgroundColor: backgroundColor, opacity: 0.75 }"></div>
 
       <div class="relative max-w-2xl mx-auto px-4 py-12 h-full flex flex-col items-center justify-center gap-2">
         <p
@@ -238,7 +248,7 @@ onUnmounted(() => {
         >
           Lia
         </p>
-        <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Photography Portfolio</p>
+        <p class="text-[11px] uppercase tracking-[0.2em] color: ACCENT">Paints Girls</p>
 
         <div class="flex items-center gap-3 mt-2">
           <RouterLink
@@ -334,6 +344,43 @@ onUnmounted(() => {
           class="mt-6 px-4 max-w-2xl mx-auto"
           @page-changed="handlePageChanged"
         />
+
+        <!--footer image-->
+        <div v-if="footerImageUrl" class="mt-10 px-4 max-w-2xl mx-auto">
+          <div class="rounded-md overflow-hidden bg-gray-50">
+            <img :src="footerImageUrl" alt="" class="w-full h-auto object-cover" loading="lazy" />
+          </div>
+        </div>
+
+        <!--featured video-->
+        <div class="mt-6 px-4 max-w-2xl mx-auto" :class="{ 'mt-10': !footerImageUrl }">
+          <div class="rounded-md overflow-hidden bg-gray-50" style="aspect-ratio: 16 / 9">
+            <iframe
+              class="w-full h-full"
+              src="https://www.youtube.com/embed/e77S5x3ibo0"
+              title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </div>
+
+        <!--second featured video-->
+        <div class="mt-6 px-4 max-w-2xl mx-auto">
+          <div class="rounded-md overflow-hidden bg-gray-50" style="aspect-ratio: 16 / 9">
+            <iframe
+              class="w-full h-full"
+              src="https://www.youtube.com/embed/l5Uqa3haaQA"
+              title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </div>
       </template>
     </div>
 
