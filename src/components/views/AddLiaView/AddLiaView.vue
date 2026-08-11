@@ -587,7 +587,7 @@ onUnmounted(() => {
       <!--header-->
       <div class="flex items-center gap-3 mb-8">
         <RouterLink
-          to="/Lia"
+          to="/"
           class="ic-btn ic-btn-ghost-primary w-9 h-9"
           aria-label="Back to Lia"
           title="Back to Lia"

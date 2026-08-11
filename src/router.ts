@@ -19,13 +19,13 @@ const routes = [
   {
     path: "/chat/",
     name: "Home",
-    alias: "/",
+    alias: "/messanger",
     component: HomeView,
     meta: { requiresAuth: true },
     children: [
       {
         path: "/chat/",
-        alias: "/",
+        alias: "/messanger",
         name: "No-Chat",
         component: Chat,
         meta: { requiresAuth: true },
@@ -62,7 +62,7 @@ const routes = [
   },
   {
     // public portfolio gallery - anyone can view, no login required
-    path: "/Lia",
+    path: "/",
     name: "Lia",
     component: LiaView,
   },

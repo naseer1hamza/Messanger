@@ -71,7 +71,7 @@ const confirmNewPassword = ref("");
 
       <!--controls-->
       <div>
-        <Button class="contained-primary contained-text w-full" link to="/"
+        <Button class="contained-primary contained-text w-full" link to="/chat/"
           >Reset Password</Button
         >
       </div>
