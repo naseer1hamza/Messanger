@@ -298,7 +298,6 @@ export function useConversationsList() {
                   sender: undefined as any,
                   attachments: undefined,
                   replyTo: undefined,
-                  isSender: senderId === store.authUser?.id,
                   sending: false,
                   state: "seen" as const,
                   liked: false,
