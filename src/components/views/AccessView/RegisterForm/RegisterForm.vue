@@ -50,8 +50,8 @@ const changeActiveSection = (event: {
       <!--header-->
       <div class="mb-6 flex flex-col">
         <img
-          src="@src/assets/vectors/logo-gradient.svg"
-          class="w-5.5 h-4.5 mb-5 opacity-70"
+          src="@src/assets/images/LinkAuraLogo.png"
+          class="w-5.5 h-4.5 mb-5 opacity-70 object-contain"
         />
         <p class="heading-2 text-black/70 dark:text-white/70 mb-4">
           Get started with LinkAura

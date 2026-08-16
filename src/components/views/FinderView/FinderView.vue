@@ -26,7 +26,7 @@ import {
 import Pagination from "@src/components/ui/navigation/Pagination.vue";
 
 const NAV_LINKS = ["Home", "Search", "Ad Page", "Inner Pages", "Contact", "Blog"];
-const PAGE_SIZE = 40;
+const PAGE_SIZE = 100;
 
 const items = ref<IFinderItem[]>([]);
 const loadingItems = ref(true);
@@ -230,18 +230,16 @@ onMounted(loadItems);
       </div>
     </div>
 
-    <!--page body: sidebar pinned to left edge + centered content-->
-    <div class="flex items-start">
-      <!--left sidebar image — pinned to the very left edge, sticky-->
-      <div class="hidden lg:block shrink-0 sticky top-0 self-start">
-        <img :src="sidebarImage" alt="" class="h-auto block" style="max-width: 160px;" />
-      </div>
+    <!--page body-->
+    <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col lg:flex-row items-start gap-6" style="padding-right: 10rem;">
 
-      <!--everything else: filters + grid, centered in remaining space-->
-      <div class="flex-1 min-w-0">
-        <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col lg:flex-row items-start gap-6">
-          <!--filters sidebar-->
-      <aside class="w-full lg:w-60 shrink-0">
+      <!--left sidebar image + filters stacked together-->
+      <div class="hidden lg:flex flex-row shrink-0 items-start gap-4 sticky top-0 self-start">
+        <!--sidebar image-->
+        <img :src="sidebarImage" alt="" class="h-auto block" style="max-width: 160px;" />
+
+        <!--filters sidebar-->
+        <aside class="w-52 shrink-0">
         <!--sidebar header-->
         <p
           class="text-sm font-bold px-3 mb-2"
@@ -313,6 +311,7 @@ onMounted(loadItems);
           </div>
         </div>
       </aside>
+      </div><!-- end sidebar image + filters group -->
 
       <!--images-->
       <main class="flex-1 w-full min-w-0">
@@ -333,10 +332,9 @@ onMounted(loadItems);
 
         <template v-else>
         <p class="body-3 text-black/40 mb-4">
-          Showing {{ paginatedItems.length }} of {{ filteredItems.length }}
         </p>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <component
             :is="item.linkUrl ? 'a' : 'div'"
             v-for="item in paginatedItems"
@@ -382,8 +380,6 @@ onMounted(loadItems);
         />
         </template>
         </main>
-        </div><!-- end max-w-7xl -->
-      </div><!-- end centered content -->
     </div><!-- end page body -->
   </div>
 </template>

@@ -15,9 +15,9 @@ const confirmNewPassword = ref("");
       <!--header-->
       <div class="mb-6 flex flex-col">
         <img
-          src="@src/assets/vectors/logo-gradient.svg"
-          class="w-5.5 h-4.5 mb-4 opacity-70"
-          alt="bird logo"
+          src="@src/assets/images/LinkAuraLogo.png"
+          class="w-5.5 h-4.5 mb-4 opacity-70 object-contain"
+          alt="LinkAura logo"
         />
         <p class="heading-2 text-black/70 dark:text-white/70 mb-4">
           Reset Your Password

@@ -6,6 +6,7 @@ import { computed, provide, ref, watch, watchEffect } from "vue";
 import { useRoute } from "vue-router";
 
 import { useConversationMessages } from "@src/composables/useConversationMessages";
+import { deleteMessage } from "@src/composables/useConversationMessages";
 import { useTypingIndicator } from "@src/composables/useTypingIndicator";
 import { getOddContact } from "@src/utils";
 
@@ -140,6 +141,17 @@ const handleCloseSelect = () => {
   selectedMessages.value = [];
 };
 
+// (event) delete all selected messages
+const handleDeleteSelected = async () => {
+  if (!activeConversation.value) return;
+  const ids = [...selectedMessages.value];
+  const convId = activeConversation.value.id;
+  for (const id of ids) {
+    await deleteMessage(id, convId);
+  }
+  handleCloseSelect();
+};
+
 const openSearch = ref(false);
 const openInfo = ref(false);
 const openVoiceCall = ref(false);
@@ -186,15 +198,18 @@ const handleCloseVoiceCallModal = (endCall: boolean) => {
           v-if="selectMode"
           :select-mode="selectMode"
           :select-all="selectAll"
+          :selected-count="selectedMessages.length"
           :handle-close-select="handleCloseSelect"
           :handle-select-all="handleSelectAll"
           :handle-deselect-all="handleDeselectAll"
+          :handle-delete-selected="handleDeleteSelected"
         />
         <ConversationInfoSection
           v-else
           :handle-open-info="() => (openInfo = true)"
           :handle-open-search="() => (openSearch = true)"
           :handle-open-voice-call="() => (openVoiceCall = true)"
+          :handle-open-edit-mode="() => (selectMode = true)"
         />
       </div>
 
@@ -211,6 +226,7 @@ const handleCloseVoiceCallModal = (endCall: boolean) => {
 
       <ChatMiddle
         :selected-messages="selectedMessages"
+        :select-mode="selectMode"
         :handle-select-message="handleSelectMessage"
         :handle-deselect-message="handleDeselectMessage"
       />

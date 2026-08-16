@@ -30,16 +30,9 @@ const store = useStore();
       class="outline-none"
     >
       <img
-        v-if="!store.settings.darkMode"
-        src="@src/assets//vectors/logo.svg"
-        class="w-8 h-7"
-        alt="gray bird logo"
-      />
-      <img
-        v-else
-        src="@src/assets/vectors/logo-white.svg"
-        class="w-8 h-7 opacity-40"
-        alt="white bird logo"
+        src="@src/assets/images/LinkAuraLogo.png"
+        class="w-16 h-16 object-contain"
+        alt="LinkAura logo"
       />
     </button>
   </div>

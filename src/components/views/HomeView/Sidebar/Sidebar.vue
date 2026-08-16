@@ -22,9 +22,7 @@ const ActiveComponent = computed((): any => {
 </script>
 
 <template>
-  <aside
-    class="xs:w-full md:w-72.5 h-full xs:px-5 md:p-0 flex flex-col overflow-visible transition-all duration-500"
-  >
+  <aside class="w-72.5 h-full p-0 flex flex-col overflow-visible transition-all duration-500">
     <!--active panel-->
     <div class="flex-1 min-h-0 overflow-hidden">
       <FadeTransition>

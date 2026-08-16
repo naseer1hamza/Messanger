@@ -41,44 +41,68 @@ store.$subscribe((_mutation, state) => {
   localStorage.setItem("chat", JSON.stringify(state));
 });
 
-// here we load the data from the server.
-onMounted(async () => {
-  store.status = "loading";
+/** Load profile + conversations for the currently authenticated user */
+const loadUserData = async () => {
+  if (!store.authUser) return;
 
-  // Initialize auth state
-  await store.initAuth();
+  const { data } = await supabase
+    .from("profiles")
+    .select("username, display_name, bio, avatar_url, chat_background_url")
+    .eq("id", store.authUser.id)
+    .single();
 
-  // Load profile data now that authUser is set, so the avatar and display name
-  // are available immediately without needing to open Settings first.
-  if (store.authUser) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("username, display_name, bio, avatar_url, chat_background_url")
-      .eq("id", store.authUser.id)
-      .single();
+  if (data) {
+    store.profileData = {
+      username: data.username ?? undefined,
+      display_name: data.display_name ?? undefined,
+      bio: data.bio ?? undefined,
+      avatar_url: data.avatar_url ?? undefined,
+      chat_background_url: data.chat_background_url ?? undefined,
+    };
 
-    if (data) {
-      store.profileData = {
-        username: data.username ?? undefined,
-        display_name: data.display_name ?? undefined,
-        bio: data.bio ?? undefined,
-        avatar_url: data.avatar_url ?? undefined,
-        chat_background_url: data.chat_background_url ?? undefined,
-      };
-
-      if (data.chat_background_url) {
-        store.settings.chatBackground = data.chat_background_url;
-      }
+    if (data.chat_background_url) {
+      store.settings.chatBackground = data.chat_background_url;
     }
   }
 
   await loadConversations();
 
-  // Mark loading complete
   setTimeout(() => {
     store.delayLoading = false;
     store.status = "success";
   }, 500);
+};
+
+onMounted(async () => {
+  store.status = "loading";
+
+  // Get the current session (handles page refresh while already logged in)
+  const { data: { session } } = await supabase.auth.getSession();
+  store.authUser = session?.user ?? null;
+
+  if (store.authUser) {
+    // Already logged in — load data immediately
+    await loadUserData();
+  } else {
+    // Not yet logged in — mark loading done so the login page renders
+    store.delayLoading = false;
+    store.status = "success";
+  }
+
+  // Listen for future auth changes (login, logout, token refresh)
+  supabase.auth.onAuthStateChange(async (event, newSession) => {
+    const wasLoggedIn = !!store.authUser;
+    store.authUser = newSession?.user ?? null;
+
+    if (event === "SIGNED_IN" && !wasLoggedIn) {
+      // User just logged in — load their data now
+      store.status = "loading";
+      store.delayLoading = true;
+      await loadUserData();
+    } else if (event === "SIGNED_OUT") {
+      store.conversations = [];
+    }
+  });
 });
 
 // the app height

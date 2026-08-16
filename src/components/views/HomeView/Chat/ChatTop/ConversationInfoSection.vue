@@ -14,6 +14,7 @@ import {
   InformationCircleIcon,
   MagnifyingGlassIcon,
   NoSymbolIcon,
+  PencilSquareIcon,
   PhoneIcon,
   ShareIcon,
   VideoCameraIcon,
@@ -26,6 +27,7 @@ const props = defineProps<{
   handleOpenInfo: () => void;
   handleOpenSearch: () => void;
   handleOpenVoiceCall?: () => void;
+  handleOpenEditMode: () => void;
 }>();
 
 const store = useStore();
@@ -213,6 +215,22 @@ const handleOpenVoiceCallModal = () => {
           :handle-click-outside="handleClickOutside"
           aria-labelledby="open-conversation-menu"
         >
+          <button
+            class="dropdown-link dropdown-link-primary"
+            aria-label="Select and delete messages"
+            role="menuitem"
+            @click="
+              () => {
+                handleCloseDropdown();
+                props.handleOpenEditMode();
+              }
+            "
+          >
+            <PencilSquareIcon
+              class="h-5 w-5 mr-3 text-black opacity-60 dark:text-white dark:opacity-70"
+            />
+            Edit Messages
+          </button>
           <button
             class="dropdown-link dropdown-link-primary"
             aria-label="Show profile information"

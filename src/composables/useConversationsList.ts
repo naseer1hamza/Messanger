@@ -3,6 +3,7 @@ import { onMounted, onUnmounted } from "vue";
 
 import { supabase } from "@src/lib/supabase";
 import useStore from "@src/store/store";
+import { notifyNewMessage } from "@src/lib/notify";
 import type { IConversation, IContact, IMessage } from "@src/types";
 
 type ConversationRow = {
@@ -249,9 +250,62 @@ export function useConversationsList() {
         },
         (payload) => {
           const conversationId = (payload.new as any)?.conversation_id;
+          const senderId: string | undefined = (payload.new as any)?.sender_id;
+          const content: string | undefined = (payload.new as any)?.content;
+          const msgType: string = (payload.new as any)?.type ?? "text";
+          const createdAt: string | undefined = (payload.new as any)?.created_at;
+
           if (!conversationId) return;
-          const exists = store.conversations.some((c) => c.id === conversationId);
-          if (!exists) void loadConversations();
+
+          // Fire a Windows notification for messages from other users
+          if (senderId && senderId !== store.authUser?.id) {
+            const conv = store.conversations.find((c) => c.id === conversationId);
+            const sender = conv?.contacts?.find((c) => c.id === senderId);
+            const senderName = sender
+              ? [sender.firstName, sender.lastName].filter(Boolean).join(" ")
+              : "New message";
+            const body = msgType === "image" ? "📷 Photo" : (content ?? "New message");
+            void notifyNewMessage(senderName, body);
+          }
+
+          const idx = store.conversations.findIndex((c) => c.id === conversationId);
+          if (idx === -1) {
+            // Brand-new conversation we don't know about yet
+            void loadConversations();
+            return;
+          }
+
+          // Existing conversation — update the last message timestamp so the
+          // sidebar sort pushes this conversation to the top immediately.
+          if (createdAt) {
+            const hasTimezone =
+              createdAt.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(createdAt);
+            const ts = new Date(hasTimezone ? createdAt : createdAt + "Z");
+            const conv = store.conversations[idx];
+            if (conv.messages && conv.messages.length > 0) {
+              conv.messages[conv.messages.length - 1].timestamp = ts;
+            } else {
+              conv.messages = [
+                {
+                  id: (payload.new as any)?.id ?? "stub",
+                  type: msgType,
+                  content: content ?? undefined,
+                  date: ts.toLocaleTimeString(undefined, {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }),
+                  timestamp: ts,
+                  sender: undefined as any,
+                  attachments: undefined,
+                  replyTo: undefined,
+                  isSender: senderId === store.authUser?.id,
+                  sending: false,
+                  state: "seen" as const,
+                  liked: false,
+                },
+              ];
+            }
+          }
         },
       )
       .subscribe();

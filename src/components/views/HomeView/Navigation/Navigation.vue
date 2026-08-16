@@ -25,16 +25,15 @@ const handleActiveSidebarComponentChange = (value: string) => {
 </script>
 
 <template>
-  <div
-    class="xs:w-full md:w-11 md:h-full md:py-7 xs:py-5 px-5 flex xs:flex-row md:flex-col items-center transition-all duration-500"
-  >
+  <div class="w-11 h-full py-7 px-5 flex flex-col items-center transition-all duration-500">
+
     <!--logo-->
     <Logo />
 
     <!--main navigation-->
     <div class="grow">
       <nav aria-label="Main navigation">
-        <ul class="xs:flex md:block xs:justify-between xs:items-center">
+        <ul>
           <!--message button-->
           <li>
             <NavLink
@@ -65,20 +64,8 @@ const handleActiveSidebarComponentChange = (value: string) => {
             />
           </li>
 
-          <!--dropdown button small screen-->
-          <li>
-            <AccountDropdown
-              id="small-profile-menu"
-              class="xs:block md:hidden"
-              aria-labelledby="small-profile-menu-button"
-              :show-dropdown="showDropdown"
-              :handle-show-dropdown="() => (showDropdown = true)"
-              :handle-close-dropdown="() => (showDropdown = false)"
-            />
-          </li>
-
           <!--notifications button-->
-          <li class="xs:hidden md:inline">
+          <li>
             <NavLink
               :icon="BellIcon"
               title="Notifications"
@@ -87,23 +74,13 @@ const handleActiveSidebarComponentChange = (value: string) => {
               :active="store.activeSidebarComponent === 'notifications'"
             />
           </li>
-
-          <!--settings button small screen-->
-          <li class="xs:inline md:hidden">
-            <NavLink
-              :icon="Cog6ToothIcon"
-              title="Settings"
-              @click="() => handleActiveSidebarComponentChange('settings')"
-              :active="store.activeSidebarComponent === 'settings'"
-            />
-          </li>
         </ul>
       </nav>
     </div>
 
-      <!--secondary navigation-->
+    <!--secondary navigation-->
     <div>
-      <nav aria-label="Extra navigation" class="xs:hidden md:block">
+      <nav aria-label="Extra navigation">
         <ul>
           <!--settings button-->
           <li>
@@ -118,14 +95,11 @@ const handleActiveSidebarComponentChange = (value: string) => {
       </nav>
 
       <!--separator-->
-      <hr
-        class="xs:hidden md:block mb-6 border-gray-100 dark:border-gray-600"
-      />
+      <hr class="mb-6 border-gray-100 dark:border-gray-600" />
 
       <!--user avatar-->
       <AccountDropdown
         id="profile-menu"
-        class="xs:hidden md:block"
         aria-labelledby="profile-menu-button"
         :show-dropdown="showDropdown"
         :handle-show-dropdown="() => (showDropdown = true)"

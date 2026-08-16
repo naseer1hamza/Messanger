@@ -13,6 +13,7 @@ const props = defineProps<{
   handleSelectMessage: (messageId: string) => void;
   handleDeselectMessage: (messageId: string) => void;
   selectedMessages: string[];
+  selectMode: boolean;
 }>();
 
 const store = useStore();
@@ -83,6 +84,7 @@ watch(typingUsers, scrollToBottom);
         :follow-up="isFollowUp(index, index - 1)"
         :divider="renderDivider(index, index - 1)"
         :selected="props.selectedMessages.includes(message.id)"
+        :select-mode="props.selectMode"
         :handle-select-message="handleSelectMessage"
         :handle-deselect-message="handleDeselectMessage"
       />

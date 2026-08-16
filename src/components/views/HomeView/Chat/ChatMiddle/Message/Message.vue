@@ -25,6 +25,7 @@ const props = defineProps<{
   self: boolean;
   divider?: boolean;
   selected?: boolean;
+  selectMode: boolean;
   handleSelectMessage: (messageId: string) => void;
   handleDeselectMessage: (messageId: string) => void;
 }>();
@@ -38,8 +39,8 @@ const contextMenuCoordinations: Ref<{ x: number; y: number }> = ref({
   y: 0,
 });
 
-// open context menu.
 const handleShowContextMenu = (event: any) => {
+  if (props.selectMode) return;
   showContextMenu.value = true;
   contextMenuCoordinations.value = {
     x:
@@ -53,18 +54,25 @@ const handleShowContextMenu = (event: any) => {
   };
 };
 
-// closes the context menu
 const handleCloseContextMenu = () => {
   showContextMenu.value = false;
 };
 
-// close context menu when opening a new one.
 const contextConfig = {
   handler: handleCloseContextMenu,
   events: ["contextmenu"],
 };
 
-// decide whether to show or hide avatar next to the image.
+// toggle selection when in select mode
+const handleToggleSelect = () => {
+  if (!props.selectMode) return;
+  if (props.selected) {
+    props.handleDeselectMessage(props.message.id);
+  } else {
+    props.handleSelectMessage(props.message.id);
+  }
+};
+
 const hideAvatar = () => {
   if (props.divider && !props.self) {
     return false;
@@ -78,15 +86,52 @@ const hideAvatar = () => {
   }
 };
 
-// reply message
 const replyMessage = getMessageById(activeConversation, props.message.replyTo);
 </script>
 
 <template>
   <div class="select-none">
-    <div class="xs:mb-6 md:mb-5 flex" :class="{ 'justify-end': props.self }">
+    <div
+      class="xs:mb-6 md:mb-5 flex items-center"
+      :class="[
+        props.self ? 'justify-end' : 'justify-start',
+        props.selectMode ? 'cursor-pointer' : '',
+      ]"
+      @click="handleToggleSelect"
+    >
+      <!--checkbox — left side for others, right side for self-->
+      <div
+        v-if="selectMode"
+        class="flex-shrink-0 flex items-center justify-center w-6 h-6 mx-3"
+        :class="props.self ? 'order-last ml-2' : 'order-first mr-2'"
+      >
+        <div
+          class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+          :class="
+            props.selected
+              ? 'bg-indigo-500 border-indigo-500'
+              : 'bg-white border-gray-300 dark:bg-gray-700 dark:border-gray-500'
+          "
+        >
+          <svg
+            v-if="props.selected"
+            class="w-3 h-3 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="3"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      </div>
+
       <!--avatar-->
-      <div class="mr-4" :class="{ 'ml-[2.25rem]': props.followUp && !divider }">
+      <div
+        v-if="!selectMode"
+        class="mr-4"
+        :class="{ 'ml-[2.25rem]': props.followUp && !divider }"
+      >
         <div
           v-if="!hideAvatar()"
           :aria-label="getFullName(props.message.sender)"
@@ -102,10 +147,10 @@ const replyMessage = getMessageById(activeConversation, props.message.replyTo);
       <div class="flex items-end">
         <!--bubble-->
         <div
-          @click="handleCloseContextMenu"
+          @click.stop="selectMode ? handleToggleSelect() : handleCloseContextMenu()"
           v-click-outside="contextConfig"
           @contextmenu.prevent="handleShowContextMenu"
-          class="group max-w-125 p-5 rounded-b-xl transition duration-500"
+          class="max-w-125 p-5 rounded-b-xl transition duration-500"
           :class="{
             'rounded-tl-xl ml-4 order-2 bg-indigo-50 dark:bg-gray-600':
               props.self && !props.selected,
@@ -175,22 +220,25 @@ const replyMessage = getMessageById(activeConversation, props.message.replyTo);
         </div>
 
         <!--date-->
-        <div :class="props.self ? ['ml-4', 'order-1'] : ['mr-4']">
+        <div v-if="!selectMode" :class="props.self ? ['ml-4', 'order-1'] : ['mr-4']">
           <p class="body-1 text-black/70 dark:text-white/70 whitespace-pre">
             {{ props.message.date }}
           </p>
         </div>
 
         <!--read receipt-->
-        <Receipt v-if="props.self" :state="props.message.state" />
+        <Receipt v-if="props.self && !selectMode" :state="props.message.state" />
       </div>
     </div>
+
     <MessageContextMenu
+      v-if="!selectMode"
       :selected="props.selected"
       :message="props.message"
       :show="showContextMenu"
       :left="contextMenuCoordinations.x"
       :top="contextMenuCoordinations.y"
+      :self="props.self"
       :handle-close-context-menu="handleCloseContextMenu"
       :handle-select-message="handleSelectMessage"
       :handle-deselect-message="handleDeselectMessage"

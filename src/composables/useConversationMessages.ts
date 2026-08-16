@@ -222,6 +222,18 @@ export function useConversationMessages(
           void reload(id);
         },
       )
+      .on(
+        "broadcast",
+        { event: "message_deleted" },
+        (payload: { payload: { messageId: string } }) => {
+          const idx = getConversationIndex(id);
+          if (idx !== undefined) {
+            store.conversations[idx].messages = store.conversations[
+              idx
+            ].messages.filter((m) => m.id !== payload.payload.messageId);
+          }
+        },
+      )
       .subscribe();
   };
 
@@ -466,4 +478,64 @@ export async function sendImageMessage(params: {
   if (error) throwFromPostgrest(error);
 
   await reloadConversationMessages(params.conversationId);
+}
+
+/** Delete a message from Supabase and remove it from the store. */
+export async function deleteMessage(
+  messageId: string,
+  conversationId: string,
+): Promise<void> {
+  const store = useStore();
+
+  const { error, count } = await supabase
+    .from("messages")
+    .delete({ count: "exact" })
+    .eq("id", messageId);
+
+  if (error) throwFromPostgrest(error);
+  if (count === 0) {
+    console.warn(
+      `deleteMessage: Supabase deleted 0 rows for id=${messageId}. ` +
+      "Check that a DELETE RLS policy exists on the messages table.",
+    );
+  }
+
+  // Broadcast so all other participants remove it in real-time
+  const bc = supabase.channel(`messages:${conversationId}`);
+  await bc.send({
+    type: "broadcast",
+    event: "message_deleted",
+    payload: { messageId },
+  });
+  void supabase.removeChannel(bc);
+
+  // Update own store immediately
+  const idx = getConversationIndex(conversationId);
+  if (idx !== undefined) {
+    store.conversations[idx].messages = store.conversations[idx].messages.filter(
+      (m) => m.id !== messageId,
+    );
+  }
+}
+
+/** Edit the text content of a message in Supabase and update the store. */
+export async function editMessage(
+  messageId: string,
+  conversationId: string,
+  newContent: string,
+): Promise<void> {
+  const store = useStore();
+
+  const { error } = await supabase
+    .from("messages")
+    .update({ content: newContent })
+    .eq("id", messageId);
+
+  if (error) throwFromPostgrest(error);
+
+  const idx = getConversationIndex(conversationId);
+  if (idx !== undefined) {
+    const msg = store.conversations[idx].messages.find((m) => m.id === messageId);
+    if (msg) msg.content = newContent;
+  }
 }

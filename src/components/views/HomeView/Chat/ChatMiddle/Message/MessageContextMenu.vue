@@ -4,6 +4,7 @@ import { inject } from "vue";
 
 import useStore from "@src/store/store";
 import { getConversationIndex } from "@src/utils";
+import { deleteMessage } from "@src/composables/useConversationMessages";
 
 import {
   ArrowUturnLeftIcon,
@@ -22,6 +23,7 @@ const props = defineProps<{
   left: number;
   top: number;
   selected: boolean;
+  self: boolean;
   handleCloseContextMenu: () => void;
   handleSelectMessage: (messageId: string) => void;
   handleDeselectMessage: (messageId: string) => void;
@@ -36,7 +38,6 @@ const handlePinMessage = () => {
   props.handleCloseContextMenu();
 
   if (activeConversation) {
-    // get the active conversation index in the state store
     let activeConversationIndex = getConversationIndex(activeConversation.id);
 
     if (
@@ -44,7 +45,6 @@ const handlePinMessage = () => {
       activeConversationIndex !== undefined &&
       activeConversationIndex !== null
     ) {
-      // update the conversation in the state store
       store.conversations[activeConversationIndex].pinnedMessage =
         props.message;
       store.conversations[activeConversationIndex].pinnedMessageHidden = false;
@@ -57,7 +57,6 @@ const handleReplyToMessage = () => {
   props.handleCloseContextMenu();
 
   if (activeConversation) {
-    // get the active conversation index in the state store
     let activeConversationIndex = getConversationIndex(activeConversation.id);
 
     if (
@@ -65,10 +64,15 @@ const handleReplyToMessage = () => {
       activeConversationIndex !== undefined &&
       activeConversationIndex !== null
     ) {
-      // update the conversation in the state store
       store.conversations[activeConversationIndex].replyMessage = props.message;
     }
   }
+};
+
+// (event) delete message
+const handleDeleteMessage = async () => {
+  props.handleCloseContextMenu();
+  await deleteMessage(props.message.id, activeConversation.id);
 };
 </script>
 
@@ -146,11 +150,13 @@ const handleReplyToMessage = () => {
       Select
     </button>
 
+    <!--delete — only for own messages-->
     <button
+      v-if="props.self"
       class="dropdown-link dropdown-link-danger"
       role="menuitem"
       aria-label="delete this message"
-      @click="handleCloseContextMenu"
+      @click="handleDeleteMessage"
     >
       <TrashIcon class="h-5 w-5 mr-3" />
       Delete Message

@@ -20,26 +20,19 @@ const activeConversationId = computed(() => {
 
 <template>
   <KeepAlive>
-    <div
-      class="xs:relative md:static h-full flex xs:flex-col md:flex-row overflow-hidden"
-    >
+    <div class="h-full flex flex-row overflow-hidden">
       <!--navigation rail-->
       <Navigation
-        class="flex shrink-0 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700 transition-colors duration-500"
+        class="flex shrink-0 border-r border-gray-100 dark:border-gray-700 transition-colors duration-500"
       />
       <!--sidebar-->
       <Sidebar
-        class="xs:grow-1 md:grow-0 xs:overflow-y-scroll md:overflow-visible scrollbar-hidden"
+        class="grow-0 overflow-visible scrollbar-hidden"
       />
       <!--chat-->
       <div
         id="mainContent"
-        class="xs:absolute xs:z-10 md:static grow h-full xs:w-full md:w-fit scrollbar-hidden bg-white dark:bg-gray-800 transition-all duration-500"
-        :class="
-          activeConversationId
-            ? ['xs:-left-[0rem]', 'xs:static']
-            : ['xs:left-250']
-        "
+        class="static grow h-full w-fit scrollbar-hidden bg-white dark:bg-gray-800 transition-all duration-500"
         role="region"
       >
         <router-view v-slot="{ Component }">
