@@ -15,9 +15,12 @@ import SelectSection from "./SelectSection.vue";
 const props = defineProps<{
   selectMode: boolean;
   selectAll: boolean;
+  selectedCount: number;
   handleSelectAll: () => void;
   handleDeselectAll: () => void;
   handleCloseSelect: () => void;
+  handleDeleteSelected: () => void;
+  handleOpenEditMode: () => void;
 }>();
 
 const store = useStore();
@@ -60,14 +63,17 @@ const handleCloseVoiceCallModal = (endCall: boolean) => {
         v-if="props.selectMode"
         :select-mode="props.selectMode"
         :select-all="props.selectAll"
+        :selected-count="props.selectedCount"
         :handle-close-select="props.handleCloseSelect"
         :handle-select-all="props.handleSelectAll"
         :handle-deselect-all="props.handleDeselectAll"
+        :handle-delete-selected="props.handleDeleteSelected"
       />
       <ConversationInfoSection
         v-else
         :handle-open-info="handleOpenInfo"
         :handle-open-search="handleOpenSearch"
+        :handle-open-edit-mode="props.handleOpenEditMode"
       />
     </div>
 
