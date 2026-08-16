@@ -94,5 +94,5 @@ export const FINDER_COLUMN_BY_KEY: Record<IFinderSelectFilter["key"], string> = 
 };
 
 export const NEARBY_DISTANCE_MIN = 0;
-export const NEARBY_DISTANCE_MAX = 500;
-export const NEARBY_DISTANCE_STEP = 5;
+export const NEARBY_DISTANCE_MAX = 36;
+export const NEARBY_DISTANCE_STEP = 1;

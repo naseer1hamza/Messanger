@@ -11,7 +11,8 @@ import {
 } from "@src/constants/finderFilters";
 import type { IFinderItem } from "@src/types";
 
-import headerImage from "@src/assets/images/header.jpeg";
+import headerImage from "@src/assets/images/TopBar.png";
+import sidebarImage from "@src/assets/images/SideBar.png";
 
 import {
   BellIcon,
@@ -229,51 +230,68 @@ onMounted(loadItems);
       </div>
     </div>
 
-    <!--body: filters sidebar + images-->
-    <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col lg:flex-row items-start gap-6">
-      <!--filters sidebar-->
-      <aside class="w-full lg:w-64 shrink-0">
+    <!--page body: sidebar pinned to left edge + centered content-->
+    <div class="flex items-start">
+      <!--left sidebar image — pinned to the very left edge, sticky-->
+      <div class="hidden lg:block shrink-0 sticky top-0 self-start">
+        <img :src="sidebarImage" alt="" class="h-auto block" style="max-width: 160px;" />
+      </div>
+
+      <!--everything else: filters + grid, centered in remaining space-->
+      <div class="flex-1 min-w-0">
+        <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col lg:flex-row items-start gap-6">
+          <!--filters sidebar-->
+      <aside class="w-full lg:w-60 shrink-0">
+        <!--sidebar header-->
         <p
-          class="inline-block bg-white text-sm font-semibold px-4 py-2 rounded-md shadow-sm mb-4"
-          style="font-family: Tahoma, sans-serif; color: #555555"
+          class="text-sm font-bold px-3 mb-2"
+          style="font-family: Tahoma, sans-serif; color: #333333;"
         >
           Browse
         </p>
 
-        <div class="flex flex-col gap-3">
-          <select
+        <!--filter items — left accent line running down-->
+        <div class="flex flex-col border-l-2" style="border-color: #aaaaaa;">
+          <div
             v-for="filter in FINDER_SELECT_FILTERS"
             :key="filter.key"
-            class="w-full h-10 px-3 pr-8 rounded-md text-sm shadow-sm outline-none focus:border-red-400 transition-colors duration-150"
-            style="font-family: Tahoma, sans-serif; color: #555555; background-color: #ffffff; border: 1px solid #d5d5d5"
-            :value="selectedFilters[filter.key] || ''"
-            @change="handleFilterChange(filter.key, ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="">{{ filter.label }}</option>
-            <option v-for="option in filter.options" :key="option" :value="option">
-              {{ option }}
-            </option>
-          </select>
-
-          <!--nearby users distance slider-->
-          <div
-            class="shadow-sm rounded-md px-3 py-2.5"
-            style="background-color: #ffffff; border: 1px solid #d5d5d5"
+            class="pl-3 pr-1 py-2"
           >
             <label
-              for="nearby-distance"
-              class="text-xs block mb-1"
-              style="font-family: Tahoma, sans-serif; color: #555555"
+              class="text-xs font-semibold uppercase tracking-wide block mb-1"
+              style="font-family: Tahoma, sans-serif; color: #888888;"
             >
-              Nearby Users
-              <span class="font-medium">
-                - within {{ maxDistance }} km
+              {{ filter.label }}
+            </label>
+            <select
+              class="w-full h-8 px-2 rounded text-sm outline-none bg-transparent transition-shadow"
+              style="font-family: Tahoma, sans-serif; color: #444444; border: 1px solid #e8e8e8; background-color: #e5e5e5;"
+              :value="selectedFilters[filter.key] || ''"
+              @change="handleFilterChange(filter.key, ($event.target as HTMLSelectElement).value)"
+            >
+              <option value="">Any</option>
+              <option v-for="option in filter.options" :key="option" :value="option">
+                {{ option }}
+              </option>
+            </select>
+          </div>
+
+          <!--nearby users distance slider-->
+          <div class="pl-3 pr-1 py-2">
+            <label
+              for="nearby-distance"
+              class="text-xs font-semibold uppercase tracking-wide block mb-1"
+              style="font-family: Tahoma, sans-serif; color: #888888;"
+            >
+              Nearby
+              <span class="normal-case font-normal" style="color: #555555;">
+                — {{ maxDistance }} km
               </span>
             </label>
             <input
               id="nearby-distance"
               type="range"
-              class="accent-red-500 w-full"
+              class="accent-gray-500 w-full"
               :min="NEARBY_DISTANCE_MIN"
               :max="NEARBY_DISTANCE_MAX"
               :step="NEARBY_DISTANCE_STEP"
@@ -281,16 +299,18 @@ onMounted(loadItems);
             />
           </div>
 
-          <button
-            v-if="activeFilterCount > 0"
-            type="button"
-            @click="clearFilters"
-            class="flex items-center justify-center gap-1 text-sm text-red-500 hover:text-red-600 py-2"
-            style="font-family: Tahoma, sans-serif"
-          >
-            <XMarkIcon class="w-4 h-4" />
-            Clear filters
-          </button>
+          <!--clear filters-->
+          <div v-if="activeFilterCount > 0" class="pl-3 pr-1 py-2">
+            <button
+              type="button"
+              @click="clearFilters"
+              class="flex items-center gap-1.5 text-xs text-gray-500 transition-colors"
+              style="font-family: Tahoma, sans-serif;"
+            >
+              <XMarkIcon class="w-3.5 h-3.5" />
+              Clear filters ({{ activeFilterCount }})
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -361,7 +381,9 @@ onMounted(loadItems);
           @page-changed="handlePageChanged"
         />
         </template>
-      </main>
-    </div>
+        </main>
+        </div><!-- end max-w-7xl -->
+      </div><!-- end centered content -->
+    </div><!-- end page body -->
   </div>
 </template>
