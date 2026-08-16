@@ -298,9 +298,7 @@ export function useConversationsList() {
                   sender: undefined as any,
                   attachments: undefined,
                   replyTo: undefined,
-                  sending: false,
                   state: "seen" as const,
-                  liked: false,
                 },
               ];
             }
