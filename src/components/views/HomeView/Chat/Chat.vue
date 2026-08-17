@@ -80,6 +80,21 @@ watchEffect(() => {
 // provide the active conversation ref to all children
 provide("activeConversation", activeConversation);
 
+// Keep the store aware of which conversation is currently open so the
+// realtime handler doesn't increment its unread count while it's on screen,
+// and clear the unread badge as soon as it's opened/viewed.
+watch(
+  activeRouteConversationId,
+  (id) => {
+    store.conversationOpen = id;
+    if (id) {
+      const idx = store.conversations.findIndex((c) => c.id === id);
+      if (idx !== -1) store.conversations[idx].unread = 0;
+    }
+  },
+  { immediate: true },
+);
+
 // determines whether select mode is enabled.
 const selectMode = ref(false);
 

@@ -4,7 +4,7 @@ import type { IConversation } from "@src/types";
 
 import useStore from "@src/store/store";
 import { ref, inject, onMounted, watch } from "vue";
-import { getConversationIndex } from "@src/utils";
+import { applyEmojiShortcuts, getConversationIndex } from "@src/utils";
 import {
   appendLocalTextMessage,
   getSendErrorMessage,
@@ -79,8 +79,10 @@ const syncDraftToStore = (draft: string) => {
 };
 
 const onComposerInput = (newValue: string) => {
-  value.value = newValue;
-  syncDraftToStore(newValue);
+  // Auto-convert text emoticons/shortcodes (e.g. ":)" -> 🙂) as you type
+  const converted = applyEmojiShortcuts(newValue);
+  value.value = converted;
+  syncDraftToStore(converted);
   broadcastTyping?.();
 };
 
@@ -148,6 +150,13 @@ const handleSend = async () => {
   } finally {
     sending.value = false;
   }
+};
+
+// append selected emoji to the message input
+const handleEmojiSelect = (emoji: string) => {
+  value.value += emoji;
+  syncDraftToStore(value.value);
+  showPicker.value = false;
 };
 
 const handleComposerKeydown = (event: KeyboardEvent) => {
@@ -222,7 +231,7 @@ const handleComposerKeydown = (event: KeyboardEvent) => {
                 class="absolute z-10 bottom-13.75 left-0 mt-2"
               >
                 <div role="none">
-                  <EmojiPicker :show="showPicker" />
+                  <EmojiPicker :show="showPicker" @emoji-select="handleEmojiSelect" />
                 </div>
               </div>
             </ScaleTransition>

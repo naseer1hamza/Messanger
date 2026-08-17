@@ -114,13 +114,19 @@ const isActive = computed(() => {
           <!--conversation name-->
           <div class="flex items-start">
             <div class="grow mb-3 text-start">
-              <p class="heading-2 text-black/70 dark:text-white/70">
+              <p
+                class="heading-2 text-black/70 dark:text-white/70"
+                :class="{ '!font-bold': props.conversation.unread }"
+              >
                 {{ getName(props.conversation) }}
               </p>
             </div>
 
             <!--last message date-->
-            <p class="body-1 text-black/70 dark:text-white/70">
+            <p
+              class="body-1 text-black/70 dark:text-white/70"
+              :class="{ '!font-bold': props.conversation.unread }"
+            >
               {{ lastMessage?.date }}
             </p>
           </div>
@@ -147,6 +153,7 @@ const isActive = computed(() => {
                 lastMessage.content
               "
               class="body-2 text-black/70 dark:text-white/70 flex justify-start items-center"
+              :class="{ '!font-bold': props.conversation.unread }"
             >
               <MicrophoneIcon
                 class="w-4 h-4 mr-2 text-black opacity-60 dark:text-white dark:opacity-70"
@@ -162,7 +169,7 @@ const isActive = computed(() => {
             <p
               v-else-if="lastMessage && hasAttachments(lastMessage)"
               class="body-2 text-black/70 dark:text-white/70 flex justify-start items-center"
-              :class="{ 'text-indigo-400': props.conversation.unread }"
+              :class="{ 'text-indigo-400 !font-bold': props.conversation.unread }"
             >
               <span :class="{ 'text-indigo-400': props.conversation.unread }">
                 {{ (lastMessage?.attachments as IAttachment[])[0].name }}
@@ -173,7 +180,7 @@ const isActive = computed(() => {
             <p
               v-else-if="lastMessage"
               class="body-2 text-black/70 dark:text-white/70 flex justify-start items-center"
-              :class="{ 'text-indigo-400': props.conversation.unread }"
+              :class="{ 'text-indigo-400 !font-bold': props.conversation.unread }"
             >
               <span :class="{ 'text-indigo-400': props.conversation.unread }">
                 {{ shorten(lastMessage) }}

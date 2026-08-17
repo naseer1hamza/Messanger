@@ -89,13 +89,15 @@ function profileToContact(p: ProfileRow): IContact {
   };
 }
 
-function formatMessageTime(iso: string): string {
-  // Supabase returns UTC timestamps; if the string has no timezone designator
-  // JavaScript would treat it as local time — appending 'Z' forces UTC parsing
-  // so toLocaleTimeString correctly converts to the user's local time.
+// Supabase returns UTC timestamps; if the string has no timezone designator
+// JavaScript would treat it as local time — appending 'Z' forces UTC parsing.
+function parseUtcDate(iso: string): Date {
   const hasTimezone = iso.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(iso);
-  const d = new Date(hasTimezone ? iso : iso + "Z");
-  return d.toLocaleTimeString(undefined, {
+  return new Date(hasTimezone ? iso : iso + "Z");
+}
+
+function formatMessageTime(iso: string): string {
+  return parseUtcDate(iso).toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -131,7 +133,7 @@ function mapRowToMessage(row: MessageRow, sender: ProfileRow): IMessage {
     content,
     attachments,
     date: formatMessageTime(row.created_at),
-    timestamp: new Date(row.created_at),
+    timestamp: parseUtcDate(row.created_at),
     sender: profileToContact(sender),
     replyTo: row.reply_to ?? undefined,
     state: "sent",

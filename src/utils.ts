@@ -9,6 +9,77 @@ import type {
 import { useRoute } from "vue-router";
 
 /**
+ * Text emoticon/shortcode -> emoji map, checked longest-key-first so that
+ * e.g. ":-)" is matched before ":)" would incorrectly partially match it.
+ */
+const EMOJI_SHORTCUTS: Record<string, string> = {
+  ":-)": "🙂",
+  ":)": "🙂",
+  ":-(": "🙁",
+  ":(": "🙁",
+  ":-D": "😄",
+  ":D": "😄",
+  ":-P": "😛",
+  ":P": "😛",
+  ":-p": "😛",
+  ":p": "😛",
+  ";-)": "😉",
+  ";)": "😉",
+  ":-O": "😮",
+  ":O": "😮",
+  ":o": "😮",
+  ":'(": "😢",
+  ":*": "😘",
+  "<3": "❤️",
+  "</3": "💔",
+  "B)": "😎",
+  "B-)": "😎",
+  "xD": "😆",
+  "XD": "😆",
+  ":|": "😐",
+  ":-|": "😐",
+  ":/": "😕",
+  ":-/": "😕",
+  "(y)": "👍",
+  "(n)": "👎",
+  ":fire:": "🔥",
+  ":100:": "💯",
+  ":heart:": "❤️",
+  ":laugh:": "😂",
+  ":cry:": "😢",
+  ":thumbsup:": "👍",
+  ":thumbsdown:": "👎",
+  ":wave:": "👋",
+  ":clap:": "👏",
+  ":pray:": "🙏",
+  ":fire2:": "🔥",
+};
+
+const SORTED_SHORTCUT_KEYS = Object.keys(EMOJI_SHORTCUTS).sort(
+  (a, b) => b.length - a.length,
+);
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Replaces known text emoticons/shortcodes (e.g. ":)", "<3", ":fire:") with
+ * their emoji equivalent. Only converts "complete" tokens — i.e. ones
+ * surrounded by whitespace or string boundaries — so it won't mangle
+ * unrelated text (like URLs) mid-type.
+ */
+export const applyEmojiShortcuts = (text: string): string => {
+  let result = text;
+  for (const key of SORTED_SHORTCUT_KEYS) {
+    const pattern = new RegExp(
+      `(^|\\s)${escapeRegExp(key)}(?=\\s|$)`,
+      "g",
+    );
+    result = result.replace(pattern, `$1${EMOJI_SHORTCUTS[key]}`);
+  }
+  return result;
+};
+
+/**
  * combine first name and last name of a contact.
  * @param contact
  * @returns A string the combines the first and last names.

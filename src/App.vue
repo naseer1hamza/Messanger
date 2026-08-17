@@ -4,6 +4,7 @@ import { ref, onMounted, onUnmounted } from "vue";
 import useStore from "@src/store/store";
 import { supabase } from "@src/lib/supabase";
 import { useConversationsList } from "@src/composables/useConversationsList";
+import { requestNotificationPermission } from "@src/lib/notify";
 
 import FadeTransition from "@src/components/ui/transitions/FadeTransition.vue";
 
@@ -42,8 +43,18 @@ store.$subscribe((_mutation, state) => {
 });
 
 /** Load profile + conversations for the currently authenticated user */
-const loadUserData = async () => {
+const loadUserData = async (accessToken?: string) => {
   if (!store.authUser) return;
+
+  // Ensure the Supabase realtime client uses the current session JWT
+  // (fixes "messages don't appear until re-login" on first install)
+  if (accessToken) {
+    supabase.realtime.setAuth(accessToken);
+  }
+
+  // Request notification permission up-front so Windows shows the prompt
+  // while the app is focused rather than silently failing later
+  void requestNotificationPermission();
 
   const { data } = await supabase
     .from("profiles")
@@ -82,7 +93,7 @@ onMounted(async () => {
 
   if (store.authUser) {
     // Already logged in — load data immediately
-    await loadUserData();
+    await loadUserData(session?.access_token);
   } else {
     // Not yet logged in — mark loading done so the login page renders
     store.delayLoading = false;
@@ -98,7 +109,7 @@ onMounted(async () => {
       // User just logged in — load their data now
       store.status = "loading";
       store.delayLoading = true;
-      await loadUserData();
+      await loadUserData(newSession?.access_token);
     } else if (event === "SIGNED_OUT") {
       store.conversations = [];
     }

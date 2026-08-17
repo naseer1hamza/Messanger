@@ -2,7 +2,7 @@
 import type { IConversation, IMessage } from "@src/types";
 import type { Ref } from "vue";
 
-import { computed, inject, onMounted, ref, watch } from "vue";
+import { computed, inject, nextTick, onMounted, ref, watch } from "vue";
 
 import useStore from "@src/store/store";
 
@@ -20,7 +20,9 @@ const store = useStore();
 
 const container: Ref<HTMLElement | null> = ref(null);
 
-const activeConversation = inject<IConversation | undefined>("activeConversation");
+// activeConversation is provided as a real Ref from Chat.vue — script-side
+// access needs `.value` (templates auto-unwrap refs, script does not).
+const activeConversation = inject<Ref<IConversation | undefined>>("activeConversation");
 const typingUsers = inject<Ref<Map<string, string>>>("typingUsers", ref(new Map()));
 
 const typingLabel = computed(() => {
@@ -33,11 +35,12 @@ const typingLabel = computed(() => {
 
 // checks whether the previous message was sent by the same user.
 const isFollowUp = (index: number, previousIndex: number): boolean => {
-  if (!activeConversation?.messages || previousIndex < 0) {
+  const messages = activeConversation?.value?.messages;
+  if (!messages || previousIndex < 0) {
     return false;
   } else {
-    let previousSender = activeConversation.messages[previousIndex].sender.id;
-    let currentSender = activeConversation.messages[index].sender.id;
+    let previousSender = messages[previousIndex].sender.id;
+    let currentSender = messages[index].sender.id;
     return previousSender === currentSender;
   }
 };
@@ -64,6 +67,20 @@ const scrollToBottom = () => {
 onMounted(scrollToBottom);
 
 watch(typingUsers, scrollToBottom);
+
+// scroll to the bottom whenever a new message arrives (or the conversation
+// switches), after the DOM has updated with the new message.
+const lastMessageId = computed(() => {
+  const messages = activeConversation?.value?.messages;
+  return messages && messages.length > 0
+    ? messages[messages.length - 1].id
+    : undefined;
+});
+
+watch(lastMessageId, async () => {
+  await nextTick();
+  scrollToBottom();
+});
 </script>
 
 <template>

@@ -9,6 +9,22 @@
 const isTauri = () =>
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
+/** Call once at login to ensure the user has granted notification permission. */
+export async function requestNotificationPermission(): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    const { isPermissionGranted, requestPermission } = await import(
+      "@tauri-apps/plugin-notification"
+    );
+    const granted = await isPermissionGranted();
+    if (!granted) {
+      await requestPermission();
+    }
+  } catch {
+    // non-critical
+  }
+}
+
 export async function notifyNewMessage(
   senderName: string,
   body: string,
@@ -17,21 +33,15 @@ export async function notifyNewMessage(
   if (document.hasFocus()) return;
 
   try {
-    const { isPermissionGranted, requestPermission, sendNotification } =
-      await import("@tauri-apps/plugin-notification");
+    const { isPermissionGranted, sendNotification } = await import(
+      "@tauri-apps/plugin-notification"
+    );
 
-    let granted = await isPermissionGranted();
-
-    if (!granted) {
-      const permission = await requestPermission();
-      granted = permission === "granted";
-    }
-
+    const granted = await isPermissionGranted();
     if (granted) {
       sendNotification({
-        title: `Messenger — ${senderName}`,
+        title: `LinkAura — ${senderName}`,
         body,
-        icon: "icons/icon.ico",
       });
     }
   } catch {

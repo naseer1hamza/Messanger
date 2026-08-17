@@ -1,5 +1,5 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { onMounted, onUnmounted } from "vue";
+import { onUnmounted, watch } from "vue";
 
 import { supabase } from "@src/lib/supabase";
 import useStore from "@src/store/store";
@@ -67,10 +67,15 @@ function profileToContact(p: {
   };
 }
 
-function formatMessageTime(iso: string): string {
+// Supabase returns UTC timestamps; if the string has no timezone designator
+// JavaScript would treat it as local time — appending 'Z' forces UTC parsing.
+function parseUtcDate(iso: string): Date {
   const hasTimezone = iso.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(iso);
-  const d = new Date(hasTimezone ? iso : iso + "Z");
-  return d.toLocaleTimeString(undefined, {
+  return new Date(hasTimezone ? iso : iso + "Z");
+}
+
+function formatMessageTime(iso: string): string {
+  return parseUtcDate(iso).toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -82,7 +87,7 @@ function mapMessageRow(row: MessageRow, sender: ProfileRow): IMessage {
     type: row.type || "text",
     content: row.content ?? undefined,
     date: formatMessageTime(row.created_at),
-    timestamp: new Date(row.created_at),
+    timestamp: parseUtcDate(row.created_at),
     sender: profileToContact(sender),
     state: "sent",
   };
@@ -223,8 +228,16 @@ export function useConversationsList() {
     }
   };
 
+  const clearSubscription = () => {
+    if (channel) {
+      void supabase.removeChannel(channel);
+      channel = null;
+    }
+  };
+
   const setupRealtimeSubscription = () => {
     const uid = store.authUser?.id;
+    clearSubscription();
     if (!uid) return;
 
     channel = supabase
@@ -275,32 +288,50 @@ export function useConversationsList() {
             return;
           }
 
-          // Existing conversation — update the last message timestamp so the
-          // sidebar sort pushes this conversation to the top immediately.
-          if (createdAt) {
-            const hasTimezone =
-              createdAt.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(createdAt);
-            const ts = new Date(hasTimezone ? createdAt : createdAt + "Z");
+          // Bump the unread count for messages from others, unless this
+          // conversation is the one currently open on screen.
+          if (
+            senderId &&
+            senderId !== store.authUser?.id &&
+            store.conversationOpen !== conversationId
+          ) {
             const conv = store.conversations[idx];
+            conv.unread = (conv.unread ?? 0) + 1;
+          }
+
+          // Existing conversation — update the last message in the sidebar
+          // so the preview text, time, and sort order all reflect the new message.
+          if (createdAt) {
+            const ts = parseUtcDate(createdAt);
+            const dateStr = ts.toLocaleTimeString(undefined, {
+              hour: "numeric",
+              minute: "2-digit",
+            });
+            const conv = store.conversations[idx];
+            const newStub = {
+              id: (payload.new as any)?.id ?? "stub",
+              type: msgType,
+              content: content ?? undefined,
+              date: dateStr,
+              timestamp: ts,
+              sender: undefined as any,
+              attachments: undefined,
+              replyTo: undefined,
+              state: "seen" as const,
+            };
+
             if (conv.messages && conv.messages.length > 0) {
-              conv.messages[conv.messages.length - 1].timestamp = ts;
+              // Replace the last message entry with the new message so the
+              // sidebar preview and timestamp both update immediately.
+              conv.messages[conv.messages.length - 1] = {
+                ...conv.messages[conv.messages.length - 1],
+                content: newStub.content,
+                date: newStub.date,
+                timestamp: newStub.timestamp,
+                type: newStub.type,
+              };
             } else {
-              conv.messages = [
-                {
-                  id: (payload.new as any)?.id ?? "stub",
-                  type: msgType,
-                  content: content ?? undefined,
-                  date: ts.toLocaleTimeString(undefined, {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  }),
-                  timestamp: ts,
-                  sender: undefined as any,
-                  attachments: undefined,
-                  replyTo: undefined,
-                  state: "seen" as const,
-                },
-              ];
+              conv.messages = [newStub];
             }
           }
         },
@@ -308,14 +339,19 @@ export function useConversationsList() {
       .subscribe();
   };
 
-  onMounted(() => {
-    setupRealtimeSubscription();
-  });
+  // Re-run whenever the authenticated user becomes available (or changes),
+  // since App.vue sets `store.authUser` asynchronously after this composable
+  // is first invoked at component setup time.
+  watch(
+    () => store.authUser?.id,
+    () => {
+      setupRealtimeSubscription();
+    },
+    { immediate: true },
+  );
 
   onUnmounted(() => {
-    if (channel) {
-      void supabase.removeChannel(channel);
-    }
+    clearSubscription();
   });
 
   return {
