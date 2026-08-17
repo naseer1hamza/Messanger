@@ -25,12 +25,33 @@ export async function requestNotificationPermission(): Promise<void> {
   }
 }
 
+/**
+ * Checks whether the app window is currently focused/visible.
+ *
+ * On Windows, Tauri/WebView2 has a known quirk where switching focus away
+ * and back (e.g. Alt-Tab, clicking another app and back) can leave OS focus
+ * on the WebView2 child surface without the top-level window ever receiving
+ * a focus event — causing `Window.isFocused()` to incorrectly report
+ * `false` even though the user is actively looking at the window. To avoid
+ * spamming notifications in that situation, treat the window as focused if
+ * *any* signal says it is.
+ */
+async function isWindowFocused(): Promise<boolean> {
+  if (document.hasFocus()) return true;
+  try {
+    const { getCurrentWindow } = await import("@tauri-apps/api/window");
+    return await getCurrentWindow().isFocused();
+  } catch {
+    return false;
+  }
+}
+
 export async function notifyNewMessage(
   senderName: string,
   body: string,
 ): Promise<void> {
   if (!isTauri()) return;
-  if (document.hasFocus()) return;
+  if (await isWindowFocused()) return;
 
   try {
     const { isPermissionGranted, sendNotification } = await import(
