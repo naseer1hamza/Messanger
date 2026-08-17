@@ -64,6 +64,7 @@ const useStore = defineStore("chat", () => {
   const activeSidebarComponent: Ref<string> = ref(
     storage.activeSidebarComponent || "messages"
   );
+  const sidebarWidth: Ref<number> = ref(storage.sidebarWidth || 290);
   const delayLoading = ref(true);
   const conversationOpen: Ref<string | undefined> = ref(
     storage.conversationOpen
@@ -145,6 +146,7 @@ const useStore = defineStore("chat", () => {
 
     // ui refs
     activeSidebarComponent,
+    sidebarWidth,
     delayLoading,
     conversationOpen,
     callMinimized,

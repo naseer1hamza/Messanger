@@ -81,12 +81,23 @@ watch(lastMessageId, async () => {
   await nextTick();
   scrollToBottom();
 });
+
+const backgroundStyle = computed(() => {
+  if (!store.settings.chatBackground) return {};
+  return {
+    backgroundImage: `url(${store.settings.chatBackground})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+  };
+});
 </script>
 
 <template>
   <div
     ref="container"
     class="grow px-5 py-5 flex flex-col overflow-y-scroll scrollbar-hidden"
+    :style="backgroundStyle"
   >
     <div
       v-if="store.status !== 'loading' && activeConversation?.messages"
