@@ -9,6 +9,7 @@ import { formatLastSeen, getAvatar, getFullName, getOddContact } from "@src/util
 
 import { MagnifyingGlassIcon, PhoneIcon, VideoCameraIcon } from "@heroicons/vue/24/outline";
 import IconButton from "@src/components/ui/inputs/IconButton.vue";
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
 
 defineProps<{
   handleOpenSearch: () => void;
@@ -65,9 +66,12 @@ const bio = computed(() => liveBio.value || contact.value?.bio || "");
 
     <div class="flex flex-col items-center px-6 pt-4 pb-6">
       <!--avatar-->
-      <div
-        class="w-20 h-20 rounded-full bg-cover bg-center bg-gray-200 dark:bg-gray-600 mb-4 shadow-sm"
-        :style="avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : {}"
+      <Avatar
+        :src="avatarUrl"
+        :name="displayName"
+        size-class="w-20 h-20"
+        text-class="text-2xl"
+        class="mb-4 shadow-sm"
       />
 
       <!--name-->

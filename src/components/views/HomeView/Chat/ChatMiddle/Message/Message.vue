@@ -12,6 +12,7 @@ import { inject, ref } from "vue";
 
 import { getFullName, getMessageById } from "@src/utils";
 
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
 import Attachments from "@src/components/views/HomeView/Chat/ChatMiddle/Message/Attachments.vue";
 import LinkPreview from "@src/components/views/HomeView/Chat/ChatMiddle/Message/LinkPreview.vue";
 import MessageContextMenu from "@src/components/views/HomeView/Chat/ChatMiddle/Message/MessageContextMenu.vue";
@@ -137,10 +138,11 @@ const replyMessage = getMessageById(activeConversation, props.message.replyTo);
           :aria-label="getFullName(props.message.sender)"
           class="outline-none"
         >
-          <div
-            :style="{ backgroundImage: `url(${props.message.sender.avatar})` }"
-            class="w-[2.25rem] h-[2.25rem] bg-cover bg-center rounded-full"
-          ></div>
+          <Avatar
+            :src="props.message.sender.avatar"
+            :name="getFullName(props.message.sender)"
+            size-class="w-[2.25rem] h-[2.25rem]"
+          />
         </div>
       </div>
 

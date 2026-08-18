@@ -11,6 +11,7 @@ import {
 } from "@heroicons/vue/24/outline";
 import Dropdown from "@src/components/ui/navigation/Dropdown/Dropdown.vue";
 import { RouterLink } from "vue-router";
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
 
 const props = defineProps<{
   showDropdown: boolean;
@@ -24,6 +25,15 @@ const router = useRouter();
 
 const avatarUrl = computed(() => {
   return store.profileData.avatar_url || store.user?.avatar || "";
+});
+
+const displayName = computed(() => {
+  return (
+    store.profileData.display_name ||
+    store.profileData.username ||
+    store.user?.firstName ||
+    ""
+  );
 });
 
 // (event) close dropdown menu when clicking outside
@@ -61,11 +71,11 @@ const handleLogout = async () => {
       aria-controls="profile-menu"
       aria-label="toggle profile menu"
     >
-      <div
+      <Avatar
         id="user-avatar"
-        :style="{ backgroundImage: `url(${avatarUrl})` }"
-        class="w-7 h-7 rounded-full bg-cover bg-center bg-gray-200 dark:bg-gray-700"
-      ></div>
+        :src="avatarUrl"
+        :name="displayName"
+      />
     </button>
 
     <!--dropdown menu-->

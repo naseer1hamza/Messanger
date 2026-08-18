@@ -27,7 +27,7 @@ const activeConversationId = computed(() => {
       />
       <!--sidebar-->
       <Sidebar
-        class="grow-0 overflow-visible scrollbar-hidden"
+        class="grow-0 overflow-visible scrollbar-hidden border-r-2 border-gray-100 dark:border-gray-700 transition-colors duration-500"
       />
       <!--chat-->
       <div

@@ -3,7 +3,7 @@ import type { IContact, IConversation } from "@src/types";
 
 import { computed, ref } from "vue";
 
-import { formatLastSeen, getAvatar, getName, getOddContact } from "@src/utils";
+import { formatLastSeen, getAvatar, getFullName, getName, getOddContact } from "@src/utils";
 
 import {
   ArrowLeftOnRectangleIcon,
@@ -16,6 +16,7 @@ import {
   UserIcon,
 } from "@heroicons/vue/24/outline";
 import { ArrowUturnLeftIcon } from "@heroicons/vue/24/solid";
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
 import IconAndText from "@src/components/shared/blocks/IconAndText.vue";
 import ImageViewer from "@src/components/shared/modals/ConversationInfoModal/ConversationInfoTab/ImageViewer.vue";
 import Button from "@src/components/ui/inputs/Button.vue";
@@ -36,6 +37,10 @@ const imageUrl = computed(() => {
     return getAvatar(props.conversation);
   }
 });
+
+const displayName = computed(() =>
+  props.contact ? getFullName(props.contact) : getName(props.conversation),
+);
 </script>
 
 <template>
@@ -91,12 +96,11 @@ const imageUrl = computed(() => {
             class="outline-none"
             aria-label="view avatar"
           >
-            <div
-              :style="{
-                backgroundImage: `url(${getAvatar(props.conversation)})`,
-              }"
-              class="w-9.5 h-9.5 rounded-full bg-cover bg-center"
-            ></div>
+            <Avatar
+              :src="imageUrl"
+              :name="displayName"
+              size-class="w-9.5 h-9.5"
+            />
           </button>
         </div>
 

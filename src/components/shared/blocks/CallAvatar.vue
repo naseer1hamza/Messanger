@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { IContact } from "@src/types";
 
+import { getFullName } from "@src/utils";
+
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
+
 const props = defineProps<{
   member: IContact;
   index: number;
@@ -10,19 +14,22 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div
+  <Avatar
     v-if="index === 0"
-    :style="{ backgroundImage: `url(${member.avatar})` }"
-    class="rounded-full bg-cover bg-center"
-    :class="props.large ? ['w-25', 'h-25'] : ['w-7', 'h-7']"
-  ></div>
+    :src="member.avatar"
+    :name="getFullName(member)"
+    :size-class="props.large ? 'w-25 h-25' : 'w-7 h-7'"
+    :text-class="props.large ? 'text-2xl' : 'text-xs'"
+  />
 
-  <div
+  <Avatar
     v-else-if="props.membersLength === 2 && index === 1"
-    :style="{ backgroundImage: `url(${member.avatar})` }"
-    class="absolute top-0 left-[1.25rem] rounded-full bg-cover bg-center"
-    :class="props.large ? ['w-25', 'h-25'] : ['w-7', 'h-7']"
-  ></div>
+    :src="member.avatar"
+    :name="getFullName(member)"
+    class="absolute top-0 left-[1.25rem]"
+    :size-class="props.large ? 'w-25 h-25' : 'w-7 h-7'"
+    :text-class="props.large ? 'text-2xl' : 'text-xs'"
+  />
 
   <div
     v-else-if="props.membersLength > 2 && index === 1"

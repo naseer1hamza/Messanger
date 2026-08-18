@@ -4,6 +4,8 @@ import type { IContact } from "@src/types";
 import useStore from "@src/store/store";
 import { formatLastSeen, getFullName } from "@src/utils";
 
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
+
 defineEmits(["contactSelected"]);
 
 const props = defineProps<{
@@ -34,10 +36,7 @@ const store = useStore();
     >
       <!--profile image-->
       <div class="mr-4">
-        <div
-          :style="{ backgroundImage: `url(${props.contact.avatar})` }"
-          class="w-7 h-7 rounded-full bg-cover bg-center"
-        ></div>
+        <Avatar :src="props.contact.avatar" :name="getFullName(props.contact)" />
       </div>
 
       <div class="w-full flex flex-col items-start">

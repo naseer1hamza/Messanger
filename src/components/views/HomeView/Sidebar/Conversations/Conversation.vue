@@ -22,6 +22,7 @@ import {
 } from "@heroicons/vue/24/outline";
 import Dropdown from "@src/components/ui/navigation/Dropdown/Dropdown.vue";
 import DropdownLink from "@src/components/ui/navigation/Dropdown/DropdownLink.vue";
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
 
 const props = defineProps<{
   conversation: IConversation;
@@ -103,10 +104,10 @@ const isActive = computed(() => {
     >
       <!--profile image-->
       <div class="mr-4">
-        <div
-          :style="{ backgroundImage: `url(${getAvatar(props.conversation)})` }"
-          class="w-7 h-7 rounded-full bg-cover bg-center"
-        ></div>
+        <Avatar
+          :src="getAvatar(props.conversation)"
+          :name="getName(props.conversation)"
+        />
       </div>
 
       <div class="w-full flex flex-col">

@@ -5,6 +5,7 @@ import { computed, onUnmounted, ref, watch } from "vue";
 
 import { PhoneIcon } from "@heroicons/vue/24/solid";
 import Modal from "@src/components/ui/utils/Modal.vue";
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
 
 const props = defineProps<{
   open: boolean;
@@ -117,18 +118,13 @@ const handleEndCall = () => {
             />
 
             <!-- avatar -->
-            <div
-              class="relative z-10 w-24 h-24 rounded-full bg-gray-600 bg-cover bg-center ring-4 ring-white/20 shadow-xl"
-              :style="avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : {}"
-            >
-              <!-- fallback initials -->
-              <div
-                v-if="!avatarUrl"
-                class="w-full h-full flex items-center justify-center text-white text-2xl font-bold"
-              >
-                {{ (contact?.firstName?.[0] || '?').toUpperCase() }}
-              </div>
-            </div>
+            <Avatar
+              :src="avatarUrl"
+              :name="displayName"
+              size-class="w-24 h-24"
+              text-class="text-2xl"
+              class="relative z-10 ring-4 ring-white/20 shadow-xl"
+            />
 
             <!-- green connected ring -->
             <Transition

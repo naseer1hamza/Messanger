@@ -93,6 +93,50 @@ export const getFullName = (contact: IContact, hyphen?: boolean) => {
 };
 
 /**
+ * derive up to two initials from a display name, used as the fallback
+ * avatar content when no profile picture is set.
+ * @param name
+ */
+export const getInitials = (name?: string | null): string => {
+  const trimmed = name?.trim();
+  if (!trimmed) return "?";
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+const AVATAR_COLORS = [
+  "#F87171",
+  "#FB923C",
+  "#FBBF24",
+  "#A3E635",
+  "#34D399",
+  "#22D3EE",
+  "#60A5FA",
+  "#818CF8",
+  "#A78BFA",
+  "#F472B6",
+];
+
+/**
+ * deterministically pick a background color for a fallback avatar based on
+ * the given name, so the same person always gets the same color.
+ * @param seed
+ */
+export const getAvatarColor = (seed?: string | null): string => {
+  const value = seed || "?";
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+};
+
+/**
  * get the other contact that is not the authenticated user.
  * @param conversation
  * @returns A contact object representing the other user in the conversation.

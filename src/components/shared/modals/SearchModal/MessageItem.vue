@@ -3,6 +3,8 @@ import type { IMessage } from "@src/types";
 
 import { getFullName } from "@src/utils";
 
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
+
 const props = defineProps<{
   message: IMessage;
 }>();
@@ -14,10 +16,10 @@ const props = defineProps<{
   >
     <!--profile image-->
     <div class="mr-4">
-      <div
-        :style="{ backgroundImage: `url(${props.message.sender.avatar})` }"
-        class="w-7 h-7 rounded-full bg-cover bg-center"
-      ></div>
+      <Avatar
+        :src="props.message.sender.avatar"
+        :name="getFullName(props.message.sender)"
+      />
     </div>
 
     <!--name and message-->

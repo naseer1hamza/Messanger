@@ -15,6 +15,7 @@ import {
   type PendingFriendRow,
 } from "@src/composables/usePendingFriendRequests";
 
+import Avatar from "@src/components/shared/blocks/Avatar.vue";
 import NoContacts from "@src/components/states/empty-states/NoContacts.vue";
 import MultipleLines from "@src/components/states/loading-states/MultipleLines.vue";
 import Button from "@src/components/ui/inputs/Button.vue";
@@ -443,13 +444,11 @@ onMounted(() => {
             class="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/80 sm:flex-row sm:items-center sm:justify-between"
           >
             <div class="flex items-center min-w-0 gap-3">
-              <div
-                class="w-11 h-11 shrink-0 rounded-full bg-cover bg-center bg-gray-200 dark:bg-gray-600"
-                :style="
-                  req.sender?.avatar_url
-                    ? { backgroundImage: `url(${req.sender.avatar_url})` }
-                    : {}
-                "
+              <Avatar
+                :src="req.sender?.avatar_url"
+                :name="req.sender?.display_name || req.sender?.username"
+                size-class="w-11 h-11"
+                text-class="text-base"
               />
               <div class="min-w-0">
                 <p
@@ -535,13 +534,11 @@ onMounted(() => {
               class="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/80 sm:flex-row sm:items-center sm:justify-between"
             >
               <div class="flex items-center min-w-0 gap-3">
-                <div
-                  class="w-11 h-11 shrink-0 rounded-full bg-cover bg-center bg-gray-200 dark:bg-gray-600"
-                  :style="
-                    user.avatar_url
-                      ? { backgroundImage: `url(${user.avatar_url})` }
-                      : {}
-                  "
+                <Avatar
+                  :src="user.avatar_url"
+                  :name="user.display_name || user.username"
+                  size-class="w-11 h-11"
+                  text-class="text-base"
                 />
                 <div class="min-w-0">
                   <p
