@@ -340,8 +340,6 @@ onMounted(loadItems);
             v-for="item in paginatedItems"
             :key="item.id"
             :href="item.linkUrl"
-            :target="item.linkUrl ? '_blank' : undefined"
-            :rel="item.linkUrl ? 'noopener noreferrer' : undefined"
             class="group relative rounded-lg overflow-hidden bg-gray-50 block"
             :class="item.linkUrl ? 'cursor-pointer' : 'cursor-default'"
             style="aspect-ratio: 3 / 4"
